@@ -81,17 +81,18 @@ const ui = TP.ui = {
      실제 예매처의 좌석배치도처럼, 무대를 중심으로 부채꼴로 펼친 구역을
      SVG 로 그린다. 구역을 누르면 그 구역의 포도알(좌석)이 열린다. */
 
-  /** 극좌표 → 화면좌표 (도 단위, 0=오른쪽 / 90=아래) */
-  _polar(cx, cy, r, deg) {
+  /** 극좌표 → 화면좌표 (도 단위, 0=오른쪽 / 90=아래).
+      sy 는 세로 눌림 비율 — 1이면 정원, 0.8이면 납작한 타원 */
+  _polar(cx, cy, r, deg, sy) {
     const a = deg * Math.PI / 180;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a) * (sy || 1)];
   },
 
   /** 구역 모양 → SVG path. 공연장마다 구조가 달라 세 가지를 섞어 쓴다. */
   _shapePath(g, s) {
     if (s.t === 'rect') return `M${s.x} ${s.y} h${s.w} v${s.h} h${-s.w} Z`;
     if (s.t === 'poly') return 'M' + s.pts.trim().split(/\s+/).join(' L') + ' Z';
-    return ui._sector(g.cx, g.cy, s.ri, s.ro, s.a1, s.a2);
+    return ui._sector(g.cx, g.cy, s.ri, s.ro, s.a1, s.a2, s.sy);
   },
 
   /** 라벨을 놓을 구역 중심 */
@@ -102,20 +103,21 @@ const ui = TP.ui = {
       return [pts.reduce((a, p) => a + p[0], 0) / pts.length,
               pts.reduce((a, p) => a + p[1], 0) / pts.length];
     }
-    return ui._polar(g.cx, g.cy, (s.ri + s.ro) / 2, (s.a1 + s.a2) / 2);
+    return ui._polar(g.cx, g.cy, (s.ri + s.ro) / 2, (s.a1 + s.a2) / 2, s.sy);
   },
 
   /** 도넛 조각(구역) 경로 */
-  _sector(cx, cy, ri, ro, a1, a2) {
-    const p = ui._polar;
-    const [x1, y1] = p(cx, cy, ro, a1);
-    const [x2, y2] = p(cx, cy, ro, a2);
-    const [x3, y3] = p(cx, cy, ri, a2);
-    const [x4, y4] = p(cx, cy, ri, a1);
+  _sector(cx, cy, ri, ro, a1, a2, sy) {
+    sy = sy || 1;
+    const p = (r, d) => ui._polar(cx, cy, r, d, sy);
+    const [x1, y1] = p(ro, a1);
+    const [x2, y2] = p(ro, a2);
+    const [x3, y3] = p(ri, a2);
+    const [x4, y4] = p(ri, a1);
     const big = (a2 - a1) > 180 ? 1 : 0;
     const f = n => n.toFixed(1);
-    return `M${f(x1)} ${f(y1)} A${ro} ${ro} 0 ${big} 1 ${f(x2)} ${f(y2)}`
-         + ` L${f(x3)} ${f(y3)} A${ri} ${ri} 0 ${big} 0 ${f(x4)} ${f(y4)} Z`;
+    return `M${f(x1)} ${f(y1)} A${ro} ${f(ro * sy)} 0 ${big} 1 ${f(x2)} ${f(y2)}`
+         + ` L${f(x3)} ${f(y3)} A${ri} ${f(ri * sy)} 0 ${big} 0 ${f(x4)} ${f(y4)} Z`;
   },
 
   renderVenue(map, cfg, onPick) {
@@ -128,6 +130,11 @@ const ui = TP.ui = {
 
     const wrap = $('#venue');
     wrap.textContent = '';
+
+    // 공연장이 바뀌면 등급 목록도 다시 만들어야 한다
+    const gl = $('#grade-list');
+    gl.textContent = '';
+    delete gl.dataset.built;
 
     const venue = TP.venueOf(cfg);
     const g = venue.map;
@@ -212,12 +219,13 @@ const ui = TP.ui = {
       el.node.classList.toggle('mid', !sold && st.ratio >= 0.12 && st.ratio < 0.35);
     });
 
-    // 등급별 잔여
+    // 등급별 잔여 — 공연장마다 등급 구성이 다르므로 실제로 있는 등급만 띄운다
     const gl = $('#grade-list');
     const gs = map.gradeStats();
     if (!gl.dataset.built) {
       gl.textContent = '';
       for (const key in TP.GRADES) {
+        if (!gs[key] || gs[key].total === 0) continue;
         const g = TP.GRADES[key];
         const item = u.el('div.grade-item', { 'data-g': key }, [
           u.el('i.gi-dot', { style: `background:${g.color}` }),

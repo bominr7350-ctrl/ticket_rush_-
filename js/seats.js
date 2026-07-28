@@ -119,7 +119,9 @@ TP.SeatMap = function (cfg, rng) {
         좋은 좌석(score 가 높은 좌석)일수록 남에게 빼앗길 확률이 확 올라간다. */
     contest(seat, load) {
       if (seat.state !== 'available') return false;
-      const p = TP.u.clamp(seat.score * (0.34 + load * 0.58) * d.heat * 0.85, 0, 0.88);
+      // 기본 확률(0.08)을 깔아 어떤 좌석이든 뺏길 수 있게 하고,
+      // 좋은 좌석일수록 급격히 올라간다.
+      const p = TP.u.clamp(0.08 + seat.score * (0.42 + load * 0.62) * d.heat * 0.92, 0, 0.9);
       return rng.chance(p);
     },
 

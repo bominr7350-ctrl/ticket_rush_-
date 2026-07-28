@@ -833,7 +833,7 @@ const App = {
 
     if (seat.state === 'mine') return this.dropSeat(seat);
     if (seat.state !== 'available') {
-      ui.toast('이미 판매되었거나 다른 사용자가 선택 중인 좌석입니다.', 'warn', 1800);
+      ui.toast('<b>이미 선택된 좌석입니다.</b>', 'warn', 1600);
       return;
     }
     if (this.map.mine.length >= this.cfg.qty) {
@@ -866,7 +866,7 @@ const App = {
       this.run.seatFails++;
       T.count('seatFail');
       T.log(`좌석 선점 실패 — ${seat.zoneName} ${seat.label}`, 'bad');
-      ui.toast('다른 사용자가 먼저 선택한 좌석입니다.<br>다른 좌석을 선택해 주세요.', 'err', 2600);
+      ui.toast('<b>이미 선택된 좌석입니다.</b><br>다른 좌석을 선택해 주세요.', 'err', 2600);
       return;
     }
 

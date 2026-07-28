@@ -15,20 +15,27 @@ TP.GRADES = {
    rows = 무대에서 먼 순서대로 배치되는 구역 줄. (앞 줄일수록 선호도가 높다)
    r/c 는 기준 규모이며 난이도의 목표 좌석수에 맞춰 비례 축소/확대된다.
 
-   shape — 구역의 모양. 공연장마다 실제 구조가 다르므로 세 가지를 섞어 쓴다.
-     { t:'rect', x, y, w, h }              사각 블록. 아레나의 플로어, 경기장의 스탠드.
-     { t:'arc',  ri, ro, a1, a2 }          도넛 조각. 무대를 감싸는 층.
-                                           ri/ro = 안쪽·바깥쪽 반지름 (map.cx/cy 기준)
-                                           a1/a2 = 각도(도). 0=오른쪽, 90=아래, 180=왼쪽
-                                           → 각도가 클수록 화면 왼쪽. 음수면 무대 옆까지 올라간다.
-     { t:'poly', pts:'x,y x,y ...' }       임의 다각형.
+   shape — 구역의 모양. 공연장마다 실루엣이 완전히 다르도록 세 가지를 섞는다.
+     { t:'rect', x, y, w, h }               사각 블록
+     { t:'arc',  ri, ro, a1, a2, sy }       도넛 조각. map.cx/cy 기준.
+                                            a = 각도(도). 0=오른쪽, 90=아래, 180=왼쪽.
+                                            음수면 무대 옆·뒤까지 올라간다.
+                                            sy = 세로 눌림 비율(생략 시 1=정원, 0.8=타원)
+     { t:'poly', pts:'x,y x,y ...' }        임의 다각형. 기울어진 스탠드에 쓴다.
 
-   ※ 실제 공연장의 구조(플로어 배치, 층 수, 감싸는 각도, 스탠드 형태)를 참고해
-     비율을 맞춘 재구성이다. 공식 좌석배치도를 그대로 옮긴 것이 아니므로
-     구역 번호와 좌석 수는 실제와 다르다. */
+   공연장별 실루엣
+     hall    부채꼴 — 정면만. 플로어 없음, 뒤 발코니 + 측면 박스
+     gym     타원 — 사각 플로어를 납작한 타원 2층이 감쌈
+     inspire 말발굽 — 잘게 쪼갠 블록이 간격을 두고 늘어선 신축 아레나
+     arena   원형 — 무대 옆·뒤까지 300도 감기는 체조경기장
+     dome    야구장 — 파울라인 따라 기울어진 내야 + 깊고 완만한 외야 곡선
+     stadium 사각 — 감싸지 않고 마주보는 야외 스탠드
+
+   ※ 실제 공연장의 구조를 참고해 비율을 맞춘 재구성이다.
+     공식 좌석배치도가 아니므로 구역 번호와 좌석 수는 실제와 다르다. */
 TP.VENUES = {
 
-  /* 부채꼴 홀 — 무대 정면으로만 객석이 펼쳐지고 2·3층은 뒤쪽 발코니 */
+  /* ── 부채꼴 홀 ── 플로어가 없고 정면으로만 객석이 퍼진다 */
   hall: {
     name: '예술의전당 콘서트홀',
     label: '콘서트홀',
@@ -55,42 +62,37 @@ TP.VENUES = {
     ]
   },
 
-  /* 원형 실내체육관 — 사각 플로어를 객석이 거의 한 바퀴 감싼다 */
+  /* ── 타원 체육관 ── 납작하게 눌린 2층 링. 층이 적고 무대와 가깝다 */
   gym: {
     name: '잠실실내체육관',
     label: '실내체육관',
-    desc: '사각 플로어를 1·2층이 둥글게 감싸는 중형 경기장. 무대와 가까워 시야가 고른 편입니다.',
-    map: { viewBox: '0 0 600 440', cx: 300, cy: 140, stage: { x: 230, y: 20, w: 140, h: 30 } },
+    desc: '사각 플로어를 납작한 타원형 2개 층이 감싸는 중형 경기장. 층이 낮아 무대와 가깝습니다.',
+    map: { viewBox: '0 0 600 420', cx: 300, cy: 175, stage: { x: 235, y: 20, w: 130, h: 28 } },
     rows: [
       [
-        { id: 'GA', name: '플로어 A', grade: 'VIP', r: 9, c: 13, shape: { t: 'rect', x: 195, y: 70, w: 66, h: 115 } },
-        { id: 'GB', name: '플로어 B', grade: 'VIP', r: 9, c: 13, shape: { t: 'rect', x: 267, y: 70, w: 66, h: 115 } },
-        { id: 'GC', name: '플로어 C', grade: 'VIP', r: 9, c: 13, shape: { t: 'rect', x: 339, y: 70, w: 66, h: 115 } }
+        { id: 'GA', name: '플로어 A', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 206, y: 62, w: 90, h: 150 } },
+        { id: 'GB', name: '플로어 B', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 304, y: 62, w: 90, h: 150 } }
       ],
       [
-        { id: 'G1', name: '1층 A구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: 143, a2: 192 } },
-        { id: 'G2', name: '1층 B구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: 92,  a2: 141 } },
-        { id: 'G3', name: '1층 C구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: 39,  a2: 88 } },
-        { id: 'G4', name: '1층 D구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: -12, a2: 37 } }
+        { id: 'G1', name: '1층 A구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 150, ro: 205, a1: 145, a2: 198, sy: 0.8 } },
+        { id: 'G2', name: '1층 B구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 150, ro: 205, a1: 93,  a2: 143, sy: 0.8 } },
+        { id: 'G3', name: '1층 C구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 150, ro: 205, a1: 39,  a2: 89,  sy: 0.8 } },
+        { id: 'G4', name: '1층 D구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 150, ro: 205, a1: -16, a2: 37,  sy: 0.8 } }
       ],
       [
-        { id: 'G5', name: '2층 A구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: 143, a2: 192 } },
-        { id: 'G6', name: '2층 B구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: 92,  a2: 141 } },
-        { id: 'G7', name: '2층 C구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: 39,  a2: 88 } },
-        { id: 'G8', name: '2층 D구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: -12, a2: 37 } }
-      ],
-      [
-        { id: 'G9', name: '3층 좌측', grade: 'A', r: 10, c: 18, shape: { t: 'arc', ri: 253, ro: 285, a1: 92, a2: 160 } },
-        { id: 'GX', name: '3층 우측', grade: 'A', r: 10, c: 18, shape: { t: 'arc', ri: 253, ro: 285, a1: 20, a2: 88 } }
+        { id: 'G5', name: '2층 A구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 213, ro: 265, a1: 145, a2: 198, sy: 0.8 } },
+        { id: 'G6', name: '2층 B구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 213, ro: 265, a1: 93,  a2: 143, sy: 0.8 } },
+        { id: 'G7', name: '2층 C구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 213, ro: 265, a1: 39,  a2: 89,  sy: 0.8 } },
+        { id: 'G8', name: '2층 D구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 213, ro: 265, a1: -16, a2: 37,  sy: 0.8 } }
       ]
     ]
   },
 
-  /* 신축 대형 아레나 — 플로어 + 100/200/300번대 말발굽형 */
+  /* ── 말발굽 아레나 ── 잘게 쪼갠 블록이 통로 간격을 두고 늘어선다 */
   inspire: {
     name: '인스파이어 아레나 (영종도)',
     label: '아레나',
-    desc: '국내 최초 대형 공연 전용 아레나. 플로어를 100·200·300번대가 말발굽으로 감쌉니다.',
+    desc: '공연 전용 신축 아레나. 100번대가 여덟 블록으로 잘게 나뉘어 말발굽을 이룹니다.',
     map: { viewBox: '0 0 600 450', cx: 300, cy: 140, stage: { x: 215, y: 24, w: 170, h: 34 } },
     rows: [
       [
@@ -99,86 +101,99 @@ TP.VENUES = {
         { id: 'IC', name: '플로어 C', grade: 'VIP', r: 10, c: 15, shape: { t: 'rect', x: 342, y: 78, w: 78, h: 117 } }
       ],
       [
-        { id: 'I1', name: '101구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: 144, a2: 194 } },
-        { id: 'I2', name: '102구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: 92,  a2: 142 } },
-        { id: 'I3', name: '103구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: 38,  a2: 88 } },
-        { id: 'I4', name: '104구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: -14, a2: 36 } }
+        { id: 'I1', name: '101', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: 170, a2: 193 } },
+        { id: 'I2', name: '102', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: 144, a2: 167 } },
+        { id: 'I3', name: '103', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: 118, a2: 141 } },
+        { id: 'I4', name: '104', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: 92,  a2: 115 } },
+        { id: 'I5', name: '105', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: 66,  a2: 89 } },
+        { id: 'I6', name: '106', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: 40,  a2: 63 } },
+        { id: 'I7', name: '107', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: 14,  a2: 37 } },
+        { id: 'I8', name: '108', grade: 'R', r: 11, c: 9, shape: { t: 'arc', ri: 165, ro: 205, a1: -12, a2: 11 } }
       ],
       [
-        { id: 'I5', name: '201구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: 144, a2: 194 } },
-        { id: 'I6', name: '202구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: 92,  a2: 142 } },
-        { id: 'I7', name: '203구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: 38,  a2: 88 } },
-        { id: 'I8', name: '204구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: -14, a2: 36 } }
+        { id: 'J1', name: '201', grade: 'S', r: 13, c: 13, shape: { t: 'arc', ri: 213, ro: 250, a1: 158, a2: 188 } },
+        { id: 'J2', name: '202', grade: 'S', r: 13, c: 13, shape: { t: 'arc', ri: 213, ro: 250, a1: 124, a2: 154 } },
+        { id: 'J3', name: '203', grade: 'S', r: 13, c: 13, shape: { t: 'arc', ri: 213, ro: 250, a1: 90,  a2: 120 } },
+        { id: 'J4', name: '204', grade: 'S', r: 13, c: 13, shape: { t: 'arc', ri: 213, ro: 250, a1: 56,  a2: 86 } },
+        { id: 'J5', name: '205', grade: 'S', r: 13, c: 13, shape: { t: 'arc', ri: 213, ro: 250, a1: 22,  a2: 52 } },
+        { id: 'J6', name: '206', grade: 'S', r: 13, c: 13, shape: { t: 'arc', ri: 213, ro: 250, a1: -12, a2: 18 } }
       ],
       [
-        { id: 'I9', name: '301구역', grade: 'A', r: 11, c: 20, shape: { t: 'arc', ri: 270, ro: 300, a1: 92, a2: 160 } },
-        { id: 'IX', name: '302구역', grade: 'A', r: 11, c: 20, shape: { t: 'arc', ri: 270, ro: 300, a1: 20, a2: 88 } }
+        { id: 'K1', name: '301', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 258, ro: 292, a1: 116, a2: 160 } },
+        { id: 'K2', name: '302', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 258, ro: 292, a1: 68,  a2: 112 } },
+        { id: 'K3', name: '303', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 258, ro: 292, a1: 20,  a2: 64 } }
       ]
     ]
   },
 
-  /* 체조경기장 — 원형에 가까워 객석이 무대 옆까지 크게 감싼다 */
+  /* ── 원형 체조경기장 ── 객석이 무대 옆을 지나 뒤까지 300도 감긴다 */
   arena: {
     name: 'KSPO DOME (체조경기장)',
     label: '체조경기장',
-    desc: '국내 콘서트의 기준이 되는 공연장. 플로어와 3개 층이 원형으로 둘러쌉니다.',
-    map: { viewBox: '0 0 600 460', cx: 300, cy: 148, stage: { x: 220, y: 22, w: 160, h: 32 } },
+    desc: '국내 콘서트의 기준. 객석이 무대 옆을 지나 뒤까지 원형으로 감아 돕니다.',
+    map: { viewBox: '0 0 600 480', cx: 300, cy: 200, stage: { x: 225, y: 58, w: 150, h: 30 } },
     rows: [
       [
-        { id: 'FA', name: '플로어 A', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 185, y: 74, w: 74, h: 131 } },
-        { id: 'FB', name: '플로어 B', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 263, y: 74, w: 74, h: 131 } },
-        { id: 'FC', name: '플로어 C', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 341, y: 74, w: 74, h: 131 } }
+        { id: 'FA', name: '플로어 A', grade: 'VIP', r: 10, c: 13, shape: { t: 'rect', x: 216, y: 100, w: 54, h: 120 } },
+        { id: 'FB', name: '플로어 B', grade: 'VIP', r: 10, c: 13, shape: { t: 'rect', x: 274, y: 100, w: 54, h: 120 } },
+        { id: 'FC', name: '플로어 C', grade: 'VIP', r: 10, c: 13, shape: { t: 'rect', x: 332, y: 100, w: 54, h: 120 } }
       ],
       [
-        { id: 'Z1', name: '1층 1구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: 144, a2: 196 } },
-        { id: 'Z2', name: '1층 2구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: 90,  a2: 142 } },
-        { id: 'Z3', name: '1층 3구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: 36,  a2: 88 } },
-        { id: 'Z4', name: '1층 4구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: -18, a2: 34 } }
+        { id: 'Z1', name: '1층 1구역', grade: 'R', r: 12, c: 14, shape: { t: 'arc', ri: 135, ro: 175, a1: 185, a2: 229 } },
+        { id: 'Z2', name: '1층 2구역', grade: 'R', r: 12, c: 14, shape: { t: 'arc', ri: 135, ro: 175, a1: 137, a2: 181 } },
+        { id: 'Z3', name: '1층 3구역', grade: 'R', r: 12, c: 14, shape: { t: 'arc', ri: 135, ro: 175, a1: 89,  a2: 133 } },
+        { id: 'Z4', name: '1층 4구역', grade: 'R', r: 12, c: 14, shape: { t: 'arc', ri: 135, ro: 175, a1: 41,  a2: 85 } },
+        { id: 'Z5', name: '1층 5구역', grade: 'R', r: 12, c: 14, shape: { t: 'arc', ri: 135, ro: 175, a1: -7,  a2: 37 } },
+        { id: 'Z6', name: '1층 6구역', grade: 'R', r: 12, c: 14, shape: { t: 'arc', ri: 135, ro: 175, a1: -55, a2: -11 } }
       ],
       [
-        { id: 'Z5', name: '2층 5구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: 144, a2: 196 } },
-        { id: 'Z6', name: '2층 6구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: 90,  a2: 142 } },
-        { id: 'Z7', name: '2층 7구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: 36,  a2: 88 } },
-        { id: 'Z8', name: '2층 8구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: -18, a2: 34 } }
+        { id: 'Y1', name: '2층 1구역', grade: 'S', r: 13, c: 15, shape: { t: 'arc', ri: 183, ro: 222, a1: 185, a2: 229 } },
+        { id: 'Y2', name: '2층 2구역', grade: 'S', r: 13, c: 15, shape: { t: 'arc', ri: 183, ro: 222, a1: 137, a2: 181 } },
+        { id: 'Y3', name: '2층 3구역', grade: 'S', r: 13, c: 15, shape: { t: 'arc', ri: 183, ro: 222, a1: 89,  a2: 133 } },
+        { id: 'Y4', name: '2층 4구역', grade: 'S', r: 13, c: 15, shape: { t: 'arc', ri: 183, ro: 222, a1: 41,  a2: 85 } },
+        { id: 'Y5', name: '2층 5구역', grade: 'S', r: 13, c: 15, shape: { t: 'arc', ri: 183, ro: 222, a1: -7,  a2: 37 } },
+        { id: 'Y6', name: '2층 6구역', grade: 'S', r: 13, c: 15, shape: { t: 'arc', ri: 183, ro: 222, a1: -55, a2: -11 } }
       ],
       [
-        { id: 'Z9', name: '3층 좌측', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 270, ro: 310, a1: 112, a2: 160 } },
-        { id: 'ZA', name: '3층 중앙', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 270, ro: 310, a1: 66,  a2: 110 } },
-        { id: 'ZB', name: '3층 우측', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 270, ro: 310, a1: 20,  a2: 64 } }
+        { id: 'W1', name: '3층 1구역', grade: 'A', r: 12, c: 17, shape: { t: 'arc', ri: 230, ro: 265, a1: 162, a2: 206 } },
+        { id: 'W2', name: '3층 2구역', grade: 'A', r: 12, c: 17, shape: { t: 'arc', ri: 230, ro: 265, a1: 114, a2: 158 } },
+        { id: 'W3', name: '3층 3구역', grade: 'A', r: 12, c: 17, shape: { t: 'arc', ri: 230, ro: 265, a1: 66,  a2: 110 } },
+        { id: 'W4', name: '3층 4구역', grade: 'A', r: 12, c: 17, shape: { t: 'arc', ri: 230, ro: 265, a1: 18,  a2: 62 } },
+        { id: 'W5', name: '3층 5구역', grade: 'A', r: 12, c: 17, shape: { t: 'arc', ri: 230, ro: 265, a1: -30, a2: 14 } }
       ]
     ]
   },
 
-  /* 야구 돔 — 무대를 홈플레이트 쪽에 두고 내야·외야·상단이 부채꼴로 퍼진다 */
+  /* ── 야구 돔 ── 파울라인 따라 기울어진 내야 + 깊고 완만한 외야 곡선 */
   dome: {
     name: '고척스카이돔',
     label: '돔구장',
-    desc: '국내 최대 실내 돔. 그라운드 뒤로 내야·외야·상단석이 넓게 퍼집니다.',
-    map: { viewBox: '0 0 600 470', cx: 300, cy: 152, stage: { x: 225, y: 20, w: 150, h: 32 } },
+    desc: '무대를 외야에 세운 야구 돔. 파울라인을 따라 기울어진 내야석과 깊은 외야석.',
+    map: { viewBox: '0 0 600 480', cx: 300, cy: 120, stage: { x: 225, y: 22, w: 150, h: 30 } },
     rows: [
       [
-        { id: 'D1', name: '그라운드 A', grade: 'VIP', r: 11, c: 16, shape: { t: 'rect', x: 180, y: 72, w: 78, h: 138 } },
-        { id: 'D2', name: '그라운드 B', grade: 'VIP', r: 11, c: 16, shape: { t: 'rect', x: 261, y: 72, w: 78, h: 138 } },
-        { id: 'D3', name: '그라운드 C', grade: 'VIP', r: 11, c: 16, shape: { t: 'rect', x: 342, y: 72, w: 78, h: 138 } }
+        { id: 'D1', name: '그라운드 A', grade: 'VIP', r: 11, c: 15, shape: { t: 'rect', x: 186, y: 70, w: 72, h: 130 } },
+        { id: 'D2', name: '그라운드 B', grade: 'VIP', r: 11, c: 15, shape: { t: 'rect', x: 264, y: 70, w: 72, h: 130 } },
+        { id: 'D3', name: '그라운드 C', grade: 'VIP', r: 11, c: 15, shape: { t: 'rect', x: 342, y: 70, w: 72, h: 130 } }
       ],
       [
-        { id: 'D4', name: '내야 3루', grade: 'R', r: 13, c: 19, shape: { t: 'arc', ri: 170, ro: 218, a1: 122, a2: 180 } },
-        { id: 'D5', name: '내야 중앙', grade: 'R', r: 13, c: 19, shape: { t: 'arc', ri: 170, ro: 218, a1: 61,  a2: 119 } },
-        { id: 'D6', name: '내야 1루', grade: 'R', r: 13, c: 19, shape: { t: 'arc', ri: 170, ro: 218, a1: 0,   a2: 58 } }
+        { id: 'E1', name: '내야 3루', grade: 'R', r: 14, c: 16, shape: { t: 'poly', pts: '172,118 108,206 152,330 222,252' } },
+        { id: 'E2', name: '내야 중앙', grade: 'R', r: 12, c: 22, shape: { t: 'poly', pts: '232,262 368,262 384,338 216,338' } },
+        { id: 'E3', name: '내야 1루', grade: 'R', r: 14, c: 16, shape: { t: 'poly', pts: '428,118 492,206 448,330 378,252' } }
       ],
       [
-        { id: 'D7', name: '외야 좌측', grade: 'S', r: 15, c: 21, shape: { t: 'arc', ri: 226, ro: 268, a1: 122, a2: 180 } },
-        { id: 'D8', name: '외야 중앙', grade: 'S', r: 15, c: 21, shape: { t: 'arc', ri: 226, ro: 268, a1: 61,  a2: 119 } },
-        { id: 'D9', name: '외야 우측', grade: 'S', r: 15, c: 21, shape: { t: 'arc', ri: 226, ro: 268, a1: 0,   a2: 58 } }
+        { id: 'F1', name: '외야 좌측', grade: 'S', r: 15, c: 20, shape: { t: 'arc', ri: 248, ro: 298, a1: 108, a2: 146 } },
+        { id: 'F2', name: '외야 중앙', grade: 'S', r: 15, c: 22, shape: { t: 'arc', ri: 248, ro: 298, a1: 72,  a2: 106 } },
+        { id: 'F3', name: '외야 우측', grade: 'S', r: 15, c: 20, shape: { t: 'arc', ri: 248, ro: 298, a1: 34,  a2: 70 } }
       ],
       [
-        { id: 'DA', name: '상단 좌측', grade: 'A', r: 13, c: 22, shape: { t: 'arc', ri: 276, ro: 310, a1: 91, a2: 162 } },
-        { id: 'DB', name: '상단 우측', grade: 'A', r: 13, c: 22, shape: { t: 'arc', ri: 276, ro: 310, a1: 18, a2: 89 } }
+        { id: 'H1', name: '상단 좌측', grade: 'A', r: 13, c: 22, shape: { t: 'arc', ri: 306, ro: 344, a1: 92, a2: 140 } },
+        { id: 'H2', name: '상단 우측', grade: 'A', r: 13, c: 22, shape: { t: 'arc', ri: 306, ro: 344, a1: 40, a2: 88 } }
       ]
     ]
   },
 
-  /* 야외 주경기장 — 둥글게 감싸지 않는다. 사각 그라운드에 스탠드가 마주보는 구조 */
+  /* ── 야외 주경기장 ── 감싸지 않는다. 사각 스탠드가 마주본다 */
   stadium: {
     name: '서울월드컵경기장',
     label: '주경기장',
@@ -195,13 +210,13 @@ TP.VENUES = {
         { id: 'N3', name: '1층 우측', grade: 'R', r: 16, c: 14, shape: { t: 'rect', x: 439, y: 82,  w: 96,  h: 210 } }
       ],
       [
-        { id: 'E1', name: '2층 좌측', grade: 'S', r: 14, c: 20, shape: { t: 'rect', x: 58,  y: 322, w: 150, h: 70 } },
-        { id: 'E2', name: '2층 중앙', grade: 'S', r: 14, c: 22, shape: { t: 'rect', x: 216, y: 322, w: 168, h: 70 } },
-        { id: 'E3', name: '2층 우측', grade: 'S', r: 14, c: 20, shape: { t: 'rect', x: 392, y: 322, w: 150, h: 70 } }
+        { id: 'M1', name: '2층 좌측', grade: 'S', r: 14, c: 20, shape: { t: 'rect', x: 58,  y: 322, w: 150, h: 70 } },
+        { id: 'M2', name: '2층 중앙', grade: 'S', r: 14, c: 22, shape: { t: 'rect', x: 216, y: 322, w: 168, h: 70 } },
+        { id: 'M3', name: '2층 우측', grade: 'S', r: 14, c: 20, shape: { t: 'rect', x: 392, y: 322, w: 150, h: 70 } }
       ],
       [
-        { id: 'W1', name: '3층 좌측', grade: 'A', r: 14, c: 24, shape: { t: 'rect', x: 110, y: 402, w: 180, h: 58 } },
-        { id: 'W2', name: '3층 우측', grade: 'A', r: 14, c: 24, shape: { t: 'rect', x: 310, y: 402, w: 180, h: 58 } }
+        { id: 'L1', name: '3층 좌측', grade: 'A', r: 14, c: 24, shape: { t: 'rect', x: 110, y: 402, w: 180, h: 58 } },
+        { id: 'L2', name: '3층 우측', grade: 'A', r: 14, c: 24, shape: { t: 'rect', x: 310, y: 402, w: 180, h: 58 } }
       ]
     ]
   }
