@@ -286,14 +286,8 @@ const ui = TP.ui = {
                 : seat.state === 'hold' ? 'hold'
                 : seat.state === 'mine' ? 'mine' : 'sold';
       if (el.dataset.st !== cls) {
-        const wasAv = el.dataset.st === 'av';
         el.dataset.st = cls;
         el.className = 'seat ' + cls;
-        // 눈앞에서 좌석이 사라지는 순간을 보여준다
-        if (wasAv && (cls === 'hold' || cls === 'sold')) {
-          el.classList.add('gone');
-          setTimeout(() => el.classList.remove('gone'), 350);
-        }
       }
     }
   },

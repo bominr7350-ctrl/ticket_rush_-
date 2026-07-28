@@ -39,7 +39,7 @@ const App = {
     cg.textContent = '';
     TP.CONCERTS.forEach(c => {
       const el = u.el('button.concert', { type: 'button', 'data-id': c.id });
-      el.appendChild(u.el('div.c-art', { text: c.emoji, style: `background:${c.art}` }));
+      el.appendChild(u.el('div.c-art', { html: TP.POSTERS[c.id] || '' }));
       const body = u.el('div.c-body');
       body.appendChild(u.el('div.c-name', { text: c.name }));
       // 공연장은 아래에서 따로 고르므로 여기서는 표기하지 않는다 (덮어쓰면 서로 어긋난다)
@@ -355,8 +355,7 @@ const App = {
     this.phase = 'standby';
     ui.show('standby');
     const c = this.cfg.concert, d = this.cfg.difficulty;
-    $('#sb-poster').style.background = c.art;
-    $('#sb-poster').textContent = c.emoji;
+    $('#sb-poster').innerHTML = TP.POSTERS[c.id] || '';
     $('#sb-title').textContent = c.name;
     $('#sb-meta').innerHTML =
       `${c.artist} · ${TP.venueOf(this.cfg).name}<br>${c.date}<br>` +
@@ -927,14 +926,9 @@ const App = {
       { id: 'senior', label: '경로 할인', rate: .3 },
       { id: 'disabled', label: '장애인 동반 1인', rate: .5 }
     ];
-    const pays = [
-      { id: 'card', label: '신용카드' },
-      { id: 'easy', label: '간편결제' },
-      { id: 'bank', label: '실시간 계좌이체' },
-      { id: 'vbank', label: '무통장입금 (가상계좌)' }
-    ];
+    const pays = TP.PAY_METHODS;
 
-    let disc = discounts[0], pay = null, agreed = false;
+    let disc = discounts[0], pay = null, paySub = null, agreed = false;
 
     const render = () => {
       const off = Math.round(base * disc.rate);
@@ -942,12 +936,42 @@ const App = {
       this.run.price = total;
       this.run.discount = disc.id;
       this.run.payMethod = pay ? pay.id : null;
+      this.run.payDetail = paySub;
       $('#co-sum').innerHTML =
         `<div><span>티켓 금액 (${mine.length}매)</span><b>${u.won(base)}</b></div>` +
         (off ? `<div class="disc"><span>${disc.label}</span><b>-${u.won(off)}</b></div>` : '') +
-        `<div><span>예매 수수료</span><b>${u.won(0)}</b></div>`;
+        `<div><span>예매 수수료</span><b>${u.won(0)}</b></div>` +
+        (paySub ? `<div><span>${pay.label}</span><b>${paySub}</b></div>` : '');
       $('#co-total').textContent = u.won(total);
-      $('#btn-pay').disabled = !(pay && agreed);
+      // 카드사·은행까지 골라야 결제가 열린다
+      $('#btn-pay').disabled = !(pay && paySub && agreed);
+    };
+
+    /** 결제 수단 하위 선택 (카드사 · 간편결제사 · 은행) */
+    const buildPaySub = (method) => {
+      const box = $('#co-pay-sub');
+      box.textContent = '';
+      paySub = null;
+      if (!method) return;
+
+      box.appendChild(u.el('div.co-sub-h', { text: method.subLabel }));
+      const grid = u.el('div.co-sub-grid');
+      (TP.PAY_SUBS[method.id] || []).forEach(name => {
+        const b = u.el('button.pay-sub', { type: 'button', 'data-name': name, text: name });
+        b.addEventListener('click', () => {
+          paySub = name;
+          u.$$('.pay-sub', grid).forEach(x => x.classList.toggle('on', x.dataset.name === name));
+          render();
+        });
+        grid.appendChild(b);
+      });
+      box.appendChild(grid);
+
+      if (method.id === 'vbank') {
+        box.appendChild(u.el('p.co-sub-note', {
+          text: '입금 기한 내에 입금하지 않으면 예매가 자동 취소됩니다.'
+        }));
+      }
     };
 
     const buildChoices = (sel, list, cur, onPick, val) => {
@@ -970,7 +994,8 @@ const App = {
 
     buildChoices('#co-discounts', discounts, disc, d => { disc = d; },
       d => d.rate ? `-${Math.round(d.rate * 100)}%` : '');
-    buildChoices('#co-pays', pays, null, p => { pay = p; });
+    buildChoices('#co-pays', pays, null, p => { pay = p; buildPaySub(p); });
+    $('#co-pay-sub').textContent = '';
 
     const chk = $('#co-agree-chk');
     chk.checked = false;

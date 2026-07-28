@@ -14,6 +14,15 @@ TP.SeatMap = function (cfg, rng) {
   const venue = TP.venueOf(cfg);
   const d = cfg.difficulty;
 
+  /* 목표로 삼은 조건에 맞는 좌석은 남들도 노리는 자리다.
+     먼저 사라지고, 잡으려 할 때 더 자주 뺏긴다. */
+  const tgt = cfg.target;
+  const isTargeted = (grade, row) =>
+      tgt === 'VIP'   ? grade === 'VIP'
+    : tgt === 'R'     ? (grade === 'VIP' || grade === 'R')
+    : tgt === 'front' ? row <= 5
+    : false;
+
   /* ─────────── 배치 생성 ─────────── */
   let baseTotal = 0;
   venue.rows.forEach(row => row.forEach(z => { baseTotal += z.r * z.c; }));
@@ -41,6 +50,11 @@ TP.SeatMap = function (cfg, rng) {
           const center = 1 - (Math.abs(c - cx) / Math.max(cx, 1)) * 0.45;
           const tierW = 1 - ri * 0.09;
           const score = gradeW * front * center * tierW;
+          const targeted = isTargeted(tpl.grade, r + 1);
+          /* 연석 2매가 목표면 소진 순서를 넓게 흔든다.
+             구멍이 흩어져서 나란히 붙은 두 자리가 훨씬 빨리 없어진다. */
+          const jitter = tgt === 'multi' ? rng.range(0.70, 1.34) : rng.range(0.90, 1.12);
+
           const seat = {
             id: `${tpl.id}-${r + 1}-${c + 1}`,
             zone: tpl.id, zoneName: tpl.name, grade: tpl.grade,
@@ -48,10 +62,10 @@ TP.SeatMap = function (cfg, rng) {
             label: `${r + 1}열 ${c + 1}번`,
             price: TP.GRADES[tpl.grade].price,
             state: 'available',        // available | hold | sold | mine
-            score,
+            score, targeted,
             // 순수하게 점수대로만 팔리면 부자연스러우므로 흔들어 주되,
             // 폭이 크면 선호 순서가 뭉개져 좋은 자리가 오래 남는다. 좁게 흔든다.
-            order: score * rng.range(0.90, 1.12)
+            order: score * jitter * (targeted ? 1.2 : 1)
           };
           zone.seats.push(seat);
           seats.push(seat);
@@ -120,8 +134,9 @@ TP.SeatMap = function (cfg, rng) {
     contest(seat, load) {
       if (seat.state !== 'available') return false;
       // 기본 확률(0.08)을 깔아 어떤 좌석이든 뺏길 수 있게 하고,
-      // 좋은 좌석일수록 급격히 올라간다.
-      const p = TP.u.clamp(0.08 + seat.score * (0.42 + load * 0.62) * d.heat * 0.92, 0, 0.9);
+      // 좋은 좌석일수록, 그리고 내가 목표로 삼은 조건에 맞는 좌석일수록 급격히 올라간다.
+      const p = TP.u.clamp(0.08 + seat.score * (0.42 + load * 0.62) * d.heat * 0.92
+                           + (seat.targeted ? 0.1 : 0), 0, 0.93);
       return rng.chance(p);
     },
 

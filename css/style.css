@@ -118,7 +118,13 @@ input{font-family:inherit}
 }
 .concert:hover{border-color:var(--border-2);transform:translateY(-2px)}
 .concert.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 8px 26px rgba(255,71,87,.16)}
-.c-art{height:96px;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative}
+.c-art{height:104px;position:relative;overflow:hidden;background:var(--surface-2)}
+.c-art svg{display:block;width:100%;height:100%}
+/* 아래쪽을 살짝 어둡게 깔아 카드 본문과 자연스럽게 이어지게 */
+.c-art::after{
+  content:"";position:absolute;inset:auto 0 0 0;height:34px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(22,26,35,.9));
+}
 .c-body{padding:13px 14px 15px}
 .c-name{font-weight:700;font-size:14.5px;line-height:1.35}
 .c-venue{color:var(--muted);font-size:12px;margin-top:5px}
@@ -231,9 +237,10 @@ input{font-family:inherit}
 }
 @media(max-width:720px){.standby-wrap{grid-template-columns:1fr;gap:24px;padding:36px 20px}}
 .sb-poster{
-  aspect-ratio:3/4;border-radius:var(--radius);display:grid;place-items:center;
-  font-size:62px;box-shadow:var(--shadow);
+  aspect-ratio:3/4;border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);background:var(--surface-2);
 }
+.sb-poster svg{display:block;width:100%;height:100%}
 .sb-label{color:var(--muted);font-size:13px;letter-spacing:.04em}
 .sb-count{
   font-family:var(--mono);font-size:clamp(56px,11vw,88px);font-weight:800;
@@ -403,17 +410,16 @@ input{font-family:inherit}
 /* 선택 가능한 좌석 = 포도알 (보라색) */
 .seat.av{background:#8b5cf6;cursor:pointer}
 .seat.av:hover{transform:scale(1.42);background:#a78bfa;z-index:5;box-shadow:0 0 0 2px rgba(139,92,246,.45)}
-.seat.hold{background:var(--amber);cursor:not-allowed;animation:holdBlink .85s infinite}
-@keyframes holdBlink{0%,100%{opacity:1}50%{opacity:.45}}
+/* 경쟁자가 선점 중인 좌석. 깜빡이거나 노랗게 뜨지 않고 그냥 사라진 것처럼 보인다 */
+.seat.hold{background:#2b313d;cursor:not-allowed}
 .seat.sold{background:#2b313d;cursor:not-allowed}
 .seat.mine{background:var(--accent);cursor:pointer;box-shadow:0 0 0 2px rgba(255,71,87,.45)}
-.seat.gone{animation:gone .35s ease}
-@keyframes gone{0%{transform:scale(1)}45%{transform:scale(1.5);background:var(--accent)}100%{transform:scale(1)}}
+/* 사라질 때 별도 연출 없음 — background transition 만으로 조용히 회색이 된다 */
 .seat-aisle{width:12px;flex:0 0 auto}
 .seat-legend{display:flex;gap:16px;justify-content:center;margin-top:18px;font-size:11.5px;color:var(--text-2);flex-wrap:wrap}
 .seat-legend span{display:flex;align-items:center;gap:6px}
 .lg{width:11px;height:11px;border-radius:3px;display:inline-block}
-.lg-av{background:#8b5cf6}.lg-hold{background:var(--amber)}
+.lg-av{background:#8b5cf6}
 .lg-sold{background:#2b313d}.lg-mine{background:var(--accent)}
 
 .seat-side h3{font-size:14px;font-weight:700;margin-bottom:11px}
@@ -487,6 +493,22 @@ input{font-family:inherit}
 .co-choice.on .cc-radio{border-color:var(--accent);border-width:5px}
 .cc-label{font-weight:600}
 .cc-val{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--text-2)}
+/* 결제 수단 하위 선택 — 카드사 · 은행 */
+.co-sub:not(:empty){
+  margin-top:12px;padding:13px 14px;border-radius:var(--radius-s);
+  background:var(--bg-2);border:1px solid var(--border);
+}
+.co-sub-h{font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);margin-bottom:9px}
+.co-sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+.pay-sub{
+  padding:9px 6px;border-radius:7px;font-size:12.5px;font-weight:600;
+  background:var(--surface);border:1.5px solid var(--border);
+  color:var(--text-2);transition:.14s;
+}
+.pay-sub:hover{border-color:var(--border-2);color:var(--text)}
+.pay-sub.on{border-color:var(--accent);background:var(--accent-dim);color:#ffb3ba}
+.co-sub-note{font-size:11px;color:var(--amber);margin-top:9px;line-height:1.5}
+
 .co-agree{display:flex;align-items:center;gap:11px;padding:15px 20px;font-size:13px;cursor:pointer;color:var(--text-2)}
 .co-agree input{position:absolute;opacity:0;pointer-events:none}
 .co-side{position:sticky;top:70px;align-self:start;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}

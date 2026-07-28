@@ -230,6 +230,144 @@ TP.venueOf = function (cfg) {
   return TP.VENUES[cfg.venue] || TP.VENUES[cfg.concert.venue];
 };
 
+/* ─────────── 공연 포스터 ───────────
+   외부 이미지 없이 SVG 로 직접 그린다. (파일 하나로 실행되어야 하므로)
+   gradient id 는 네 장이 한 화면에 같이 뜨므로 공연별로 접두사를 붙여 겹치지 않게 한다.
+   preserveAspectRatio="slice" 로 카드 크기에 맞춰 잘라 채운다. */
+TP.POSTERS = {
+
+  /* 오로라 리본 — 하늘에 흐르는 빛의 띠 */
+  idol: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="pa-bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#160a2b"/><stop offset=".55" stop-color="#3a0f33"/><stop offset="1" stop-color="#5c1230"/>
+      </linearGradient>
+      <linearGradient id="pa-r1" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ff4d6d" stop-opacity="0"/><stop offset=".45" stop-color="#ff4d6d" stop-opacity=".9"/><stop offset="1" stop-color="#ffb26b" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="pa-r2" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#7c5cff" stop-opacity="0"/><stop offset=".5" stop-color="#a978ff" stop-opacity=".85"/><stop offset="1" stop-color="#4ad8ff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="pa-r3" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#4ad8ff" stop-opacity="0"/><stop offset=".5" stop-color="#5ef0d0" stop-opacity=".55"/><stop offset="1" stop-color="#4ad8ff" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="pa-b"><feGaussianBlur stdDeviation="7"/></filter>
+    </defs>
+    <rect width="320" height="146" fill="url(#pa-bg)"/>
+    <g filter="url(#pa-b)">
+      <path d="M-20 96 C50 44 110 118 176 66 S276 26 340 58" stroke="url(#pa-r1)" stroke-width="21" fill="none"/>
+      <path d="M-20 62 C60 108 118 34 190 84 S288 112 340 74" stroke="url(#pa-r2)" stroke-width="17" fill="none"/>
+      <path d="M-20 120 C70 86 130 138 210 104 S300 130 340 108" stroke="url(#pa-r3)" stroke-width="12" fill="none"/>
+    </g>
+    <g fill="#fff">
+      <circle cx="34" cy="26" r="1.5" opacity=".9"/><circle cx="88" cy="16" r="1" opacity=".6"/>
+      <circle cx="146" cy="30" r="1.3" opacity=".8"/><circle cx="212" cy="18" r="1" opacity=".55"/>
+      <circle cx="268" cy="34" r="1.6" opacity=".85"/><circle cx="300" cy="14" r="1" opacity=".5"/>
+      <circle cx="62" cy="52" r="1" opacity=".45"/><circle cx="240" cy="60" r="1.1" opacity=".5"/>
+    </g>
+  </svg>`,
+
+  /* 여름의 마지막 노을 — 지는 해와 바다 */
+  band: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="pb-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1b2a6b"/><stop offset=".42" stop-color="#7b3f8f"/>
+        <stop offset=".68" stop-color="#e8654f"/><stop offset="1" stop-color="#ffb45e"/>
+      </linearGradient>
+      <linearGradient id="pb-sun" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#ff8a3d"/>
+      </linearGradient>
+      <linearGradient id="pb-sea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2a1245"/><stop offset="1" stop-color="#0d0a24"/>
+      </linearGradient>
+      <filter id="pb-g"><feGaussianBlur stdDeviation="9"/></filter>
+    </defs>
+    <rect width="320" height="146" fill="url(#pb-sky)"/>
+    <circle cx="160" cy="98" r="46" fill="#ffd08a" opacity=".45" filter="url(#pb-g)"/>
+    <circle cx="160" cy="98" r="30" fill="url(#pb-sun)"/>
+    <rect y="98" width="320" height="48" fill="url(#pb-sea)"/>
+    <g stroke="#ffb45e" stroke-linecap="round" opacity=".75">
+      <path d="M138 106h44" stroke-width="2"/><path d="M144 114h32" stroke-width="1.6" opacity=".8"/>
+      <path d="M132 122h56" stroke-width="1.4" opacity=".6"/><path d="M148 130h24" stroke-width="1.2" opacity=".45"/>
+    </g>
+    <g fill="#0d0a24" opacity=".85">
+      <path d="M0 132c26-10 44 6 70-2s40-12 66-4 44 12 74 4 44-8 110 2v14H0z"/>
+    </g>
+    <g fill="#fff" opacity=".55">
+      <circle cx="42" cy="22" r="1.2"/><circle cx="96" cy="14" r="1"/><circle cx="252" cy="20" r="1.1"/><circle cx="290" cy="34" r="1"/>
+    </g>
+  </svg>`,
+
+  /* 페스티벌 — 이퀄라이저 바와 조명 */
+  fest: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="pf-bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#04231f"/><stop offset=".5" stop-color="#062b3d"/><stop offset="1" stop-color="#0a1440"/>
+      </linearGradient>
+      <linearGradient id="pf-b1" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0" stop-color="#22c98f"/><stop offset="1" stop-color="#8ff5c8"/>
+      </linearGradient>
+      <linearGradient id="pf-b2" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0" stop-color="#2f7bff"/><stop offset="1" stop-color="#8fd0ff"/>
+      </linearGradient>
+      <linearGradient id="pf-b3" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#ffe9a8"/>
+      </linearGradient>
+      <filter id="pf-g"><feGaussianBlur stdDeviation="6"/></filter>
+    </defs>
+    <rect width="320" height="146" fill="url(#pf-bg)"/>
+    <g opacity=".5" filter="url(#pf-g)">
+      <path d="M40 146L18 22h20z" fill="#22c98f"/><path d="M160 146l-8-128h18z" fill="#4a86ff"/><path d="M282 146l22-124h-20z" fill="#ffb020"/>
+    </g>
+    <g>
+      <rect x="18"  y="96"  width="15" height="50" rx="3" fill="url(#pf-b1)"/>
+      <rect x="41"  y="66"  width="15" height="80" rx="3" fill="url(#pf-b2)"/>
+      <rect x="64"  y="108" width="15" height="38" rx="3" fill="url(#pf-b3)"/>
+      <rect x="87"  y="44"  width="15" height="102" rx="3" fill="url(#pf-b1)"/>
+      <rect x="110" y="82"  width="15" height="64" rx="3" fill="url(#pf-b2)"/>
+      <rect x="133" y="30"  width="15" height="116" rx="3" fill="url(#pf-b3)"/>
+      <rect x="156" y="72"  width="15" height="74" rx="3" fill="url(#pf-b1)"/>
+      <rect x="179" y="52"  width="15" height="94" rx="3" fill="url(#pf-b2)"/>
+      <rect x="202" y="100" width="15" height="46" rx="3" fill="url(#pf-b3)"/>
+      <rect x="225" y="60"  width="15" height="86" rx="3" fill="url(#pf-b1)"/>
+      <rect x="248" y="90"  width="15" height="56" rx="3" fill="url(#pf-b2)"/>
+      <rect x="271" y="38"  width="15" height="108" rx="3" fill="url(#pf-b3)"/>
+      <rect x="294" y="86"  width="15" height="60" rx="3" fill="url(#pf-b1)"/>
+    </g>
+    <g fill="#fff">
+      <circle cx="52" cy="24" r="2" opacity=".8"/><circle cx="124" cy="16" r="1.6" opacity=".6"/>
+      <circle cx="206" cy="26" r="2.2" opacity=".75"/><circle cx="264" cy="14" r="1.5" opacity=".55"/>
+    </g>
+  </svg>`,
+
+  /* 그날의 파도 — 달빛과 겹치는 물결 */
+  musical: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="pm-bg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1a1005"/><stop offset=".5" stop-color="#5a1f1a"/><stop offset="1" stop-color="#2b0a14"/>
+      </linearGradient>
+      <linearGradient id="pm-w1" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#ff5f4d"/>
+      </linearGradient>
+      <linearGradient id="pm-w2" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ff5f4d"/><stop offset="1" stop-color="#a8243f"/>
+      </linearGradient>
+      <radialGradient id="pm-m"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#ffd98a"/></radialGradient>
+      <filter id="pm-g"><feGaussianBlur stdDeviation="8"/></filter>
+    </defs>
+    <rect width="320" height="146" fill="url(#pm-bg)"/>
+    <circle cx="246" cy="40" r="30" fill="#ffd98a" opacity=".35" filter="url(#pm-g)"/>
+    <circle cx="246" cy="40" r="17" fill="url(#pm-m)"/>
+    <g opacity=".28" fill="none" stroke="#ffe0a8">
+      <path d="M0 86c40-18 76 10 116-6s72-20 108-4 62 16 96 2" stroke-width="1.4"/>
+      <path d="M0 74c44-16 72 12 118-4s70-18 104-2 64 14 98 0" stroke-width="1"/>
+    </g>
+    <path d="M-10 104c46-26 88 12 138-8s94-14 140 10 62 6 62 6v42H-10z" fill="url(#pm-w2)" opacity=".85"/>
+    <path d="M-10 122c52-22 94 10 146-8s90-8 194 8v30H-10z" fill="url(#pm-w1)" opacity=".9"/>
+    <path d="M-10 136c60-14 110 8 168-4s100-4 172 6v14H-10z" fill="#2b0a14"/>
+  </svg>`
+};
+
 /* ─────────── 공연 목록 ───────────
    schedule = 예매 가능한 회차.
      heat : 이 회차의 경쟁률 배수. 좌석 소진 속도에 곱해진다.
@@ -288,6 +426,26 @@ TP.CONCERTS = [
 /** 1회 예매 최대 매수 */
 TP.QTY_MAX = 4;
 
+/* ─────────── 결제 수단 ───────────
+   실제 예매처처럼 수단을 고른 뒤 카드사·은행까지 한 번 더 골라야 한다.
+   결제 직전에 선택이 하나 더 끼는 것만으로도 체감 난이도가 올라간다. */
+TP.PAY_METHODS = [
+  { id: 'card',  label: '신용카드',              subLabel: '카드사 선택' },
+  { id: 'easy',  label: '간편결제',              subLabel: '간편결제 선택' },
+  { id: 'bank',  label: '실시간 계좌이체',        subLabel: '은행 선택' },
+  { id: 'vbank', label: '무통장입금 (가상계좌)',  subLabel: '입금 은행 선택' }
+];
+
+TP.PAY_SUBS = {
+  card: ['신한카드', '삼성카드', '현대카드', 'KB국민카드', '롯데카드',
+         '하나카드', 'BC카드', 'NH농협카드', '우리카드'],
+  easy: ['카카오페이', '네이버페이', '토스페이', '페이코', '삼성페이', 'SSG페이'],
+  bank: ['KB국민은행', '신한은행', '우리은행', '하나은행', 'NH농협은행',
+         'IBK기업은행', '카카오뱅크', '토스뱅크', 'SC제일은행'],
+  vbank: ['KB국민은행', '신한은행', '우리은행', '하나은행', 'NH농협은행',
+          'IBK기업은행', '카카오뱅크', '케이뱅크']
+};
+
 /* ─────────── 난이도 ───────────
    users        : 동시 접속자 규모
    seats        : 목표 총 좌석수
@@ -304,36 +462,38 @@ TP.DIFFS = [
   {
     id: 'practice', name: '연습', level: 1,
     desc: '흐름을 익히는 단계. 지연과 오류가 적고 좌석도 여유롭습니다.',
-    users: 24000, seats: 3600, selloutSec: 700, drain: 60, maxWaitSec: 18,
+    users: 24000, seats: 3600, selloutSec: 560, drain: 60, maxWaitSec: 18,
     errorRate: 0.015, latMu: 4.6, latSig: 0.42, holdSec: 420, limitSec: 600, heat: 0.7
   },
   {
     id: 'real', name: '실전', level: 2,
     desc: '일반적인 인기 공연 수준. 대기열과 좌석 경쟁이 본격적으로 시작됩니다.',
-    users: 95000, seats: 2600, selloutSec: 240, drain: 200, maxWaitSec: 24,
+    users: 95000, seats: 2600, selloutSec: 185, drain: 200, maxWaitSec: 24,
     errorRate: 0.05, latMu: 5.2, latSig: 0.55, holdSec: 300, limitSec: 480, heat: 1.0
   },
   {
     id: 'hard', name: '피켓팅', level: 3,
     desc: '좌석보다 사람이 훨씬 많은 상황. 1초 판단이 결과를 가릅니다.',
-    users: 320000, seats: 1700, selloutSec: 105, drain: 350, maxWaitSec: 28,
+    users: 320000, seats: 1700, selloutSec: 78, drain: 350, maxWaitSec: 28,
     errorRate: 0.11, latMu: 5.7, latSig: 0.7, holdSec: 240, limitSec: 420, heat: 1.35
   },
   {
     id: 'hell', name: '지옥', level: 4,
     desc: '실제 최상위 티켓팅. 대부분 좌석 화면조차 보지 못하고 끝납니다.',
-    users: 850000, seats: 850, selloutSec: 48, drain: 600, maxWaitSec: 32,
+    users: 850000, seats: 850, selloutSec: 34, drain: 600, maxWaitSec: 32,
     errorRate: 0.19, latMu: 6.1, latSig: 0.85, holdSec: 180, limitSec: 360, heat: 1.7
   }
 ];
 
 /* ─────────── 목표 좌석 (선택사항) ─────────── */
+/* 목표를 정하면 그 조건에 맞는 좌석이 더 빨리 사라지고 선점 경쟁도 심해진다.
+   남들도 같은 자리를 노리기 때문이다 → 목표를 좁힐수록 난이도가 올라간다. */
 TP.TARGETS = [
-  { id: 'any',  label: '아무 자리나',   desc: '일단 성공이 목표' },
-  { id: 'VIP',  label: 'VIP석',        desc: '최상위 등급' },
-  { id: 'R',    label: 'R석 이상',      desc: 'R 또는 VIP' },
-  { id: 'front',label: '앞줄 (1~5열)',  desc: '등급 무관 앞자리' },
-  { id: 'multi',label: '연석 2매',      desc: '붙어있는 두 자리' }
+  { id: 'any',  label: '아무 자리나',   desc: '일단 성공이 목표 · 추가 난이도 없음' },
+  { id: 'VIP',  label: 'VIP석',        desc: '최상위 등급 · VIP석이 훨씬 빨리 소진' },
+  { id: 'R',    label: 'R석 이상',      desc: 'R 또는 VIP · 상위 등급 전체가 빨리 소진' },
+  { id: 'front',label: '앞줄 (1~5열)',  desc: '등급 무관 앞자리 · 앞줄이 순식간에 사라짐' },
+  { id: 'multi',label: '연석 2매',      desc: '붙어있는 두 자리 · 좌석이 흩어져 사라짐' }
 ];
 
 /* ─────────── 분석 벤치마크 ───────────
