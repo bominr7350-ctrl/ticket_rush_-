@@ -12,6 +12,11 @@
 <button type="button" id="btn-menu" class="menu-btn" aria-label="메뉴" aria-expanded="false">
   <span></span><span></span><span></span>
 </button>
+<!-- 메뉴 위치를 모르고 지나칠 수 있어 처음 한 번 화살표로 알려준다 -->
+<div id="menu-hint" class="menu-hint hidden">
+  <span>보안문자만 연습하려면 <b>여기</b></span>
+  <button type="button" id="btn-hint-close" aria-label="안내 닫기">×</button>
+</div>
 <div id="menu-backdrop" class="menu-backdrop hidden"></div>
 <nav id="menu-panel" class="menu-panel hidden" aria-label="연습 모드 선택">
   <div class="menu-head">무엇을 연습할까요?</div>
