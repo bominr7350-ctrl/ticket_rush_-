@@ -232,144 +232,115 @@ TP.venueOf = function (cfg) {
 
 /* ─────────── 공연 포스터 ───────────
    외부 이미지 없이 SVG 로 직접 그린다. (파일 하나로 실행되어야 하므로)
-   preserveAspectRatio="slice" 로 카드 크기에 맞춰 잘라 채운다.
+   실제 공연 포스터처럼 큰 제목 타이포가 주인공이고 배경은 색면만 둔다.
 
-   같은 포스터가 홈 카드와 오픈 대기 화면에 동시에 존재하므로
-   gradient/filter id 가 그대로면 문서 안에서 중복된다. 중복되면 url(#..) 가
-   앞쪽(숨겨진 홈 카드) 것을 가리켜 채색이 깨지고 검은 판이 된다.
-   그래서 id 에 __U__ 자리표시자를 두고, 그릴 때마다 TP.posterSVG() 가
-   서로 다른 접미사로 치환한다. */
+   레이아웃 — viewBox 는 3:4 세로(300x400).
+     오픈 대기 화면은 3:4 그대로 전체가 보인다.
+     홈 카드는 높이가 104px 로 고정이고 너비는 210~320px 사이라, slice 로
+     세로 중앙만 잘려 보인다. 카드가 넓어질수록 보이는 띠가 좁아지는데
+     가장 좁은 경우가 약 98단위(y 151~249)다.
+     그래서 제목 두 줄을 baseline y=190 / y=234 에 고정해 어떤 카드 너비에서도
+     제목이 잘리지 않게 한다. 날짜·아티스트·공연장은 그 위아래에 둬서
+     카드에서는 잘려 나가고 대기 화면에서만 보인다.
+     장식 도형도 y<150 또는 y>350 에만 둬서 제목과 겹치지 않게 한다.
+
+   같은 포스터가 홈 카드와 대기 화면에 동시에 존재하므로 gradient id 가
+   문서 안에서 중복된다. 중복되면 url(#..) 이 앞쪽(숨겨진 홈 카드) 것을 가리켜
+   채색이 깨지므로, id 에 __U__ 자리표시자를 두고 TP.posterSVG() 가
+   그릴 때마다 서로 다른 접미사로 치환한다. */
 TP.POSTERS = {
 
-  /* 오로라 리본 — 하늘에 흐르는 빛의 띠 */
-  idol: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+  /* AURORA — 보라빛 헤일로 */
+  idol: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pa-bg__U__" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#160a2b"/><stop offset=".55" stop-color="#3a0f33"/><stop offset="1" stop-color="#5c1230"/>
+      <linearGradient id="pa-bg__U__" x1="0" y1="0" x2=".7" y2="1">
+        <stop offset="0" stop-color="#26104a"/><stop offset=".55" stop-color="#4e1342"/><stop offset="1" stop-color="#7a123c"/>
       </linearGradient>
-      <linearGradient id="pa-r1__U__" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#ff4d6d" stop-opacity="0"/><stop offset=".45" stop-color="#ff4d6d" stop-opacity=".9"/><stop offset="1" stop-color="#ffb26b" stop-opacity="0"/>
-      </linearGradient>
-      <linearGradient id="pa-r2__U__" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#7c5cff" stop-opacity="0"/><stop offset=".5" stop-color="#a978ff" stop-opacity=".85"/><stop offset="1" stop-color="#4ad8ff" stop-opacity="0"/>
-      </linearGradient>
-      <linearGradient id="pa-r3__U__" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#4ad8ff" stop-opacity="0"/><stop offset=".5" stop-color="#5ef0d0" stop-opacity=".55"/><stop offset="1" stop-color="#4ad8ff" stop-opacity="0"/>
-      </linearGradient>
-      <filter id="pa-b__U__"><feGaussianBlur stdDeviation="7"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pa-bg__U__)"/>
-    <g filter="url(#pa-b__U__)">
-      <path d="M-20 96 C50 44 110 118 176 66 S276 26 340 58" stroke="url(#pa-r1__U__)" stroke-width="21" fill="none"/>
-      <path d="M-20 62 C60 108 118 34 190 84 S288 112 340 74" stroke="url(#pa-r2__U__)" stroke-width="17" fill="none"/>
-      <path d="M-20 120 C70 86 130 138 210 104 S300 130 340 108" stroke="url(#pa-r3__U__)" stroke-width="12" fill="none"/>
+    <rect width="300" height="400" fill="url(#pa-bg__U__)"/>
+    <g fill="none" stroke="#ff8fb0" opacity=".26">
+      <circle cx="242" cy="88" r="60" stroke-width="1"/>
+      <circle cx="242" cy="88" r="90" stroke-width="1" opacity=".6"/>
+      <circle cx="242" cy="88" r="34" stroke-width="1.4"/>
     </g>
-    <g fill="#fff">
-      <circle cx="34" cy="26" r="1.5" opacity=".9"/><circle cx="88" cy="16" r="1" opacity=".6"/>
-      <circle cx="146" cy="30" r="1.3" opacity=".8"/><circle cx="212" cy="18" r="1" opacity=".55"/>
-      <circle cx="268" cy="34" r="1.6" opacity=".85"/><circle cx="300" cy="14" r="1" opacity=".5"/>
-      <circle cx="62" cy="52" r="1" opacity=".45"/><circle cx="240" cy="60" r="1.1" opacity=".5"/>
-    </g>
+    <text x="30" y="56" fill="#ffb3c8" font-size="12" font-weight="700" letter-spacing="3">2026.09.11 – 09.13</text>
+    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">2026 WORLD TOUR</text>
+    <text x="30" y="190" fill="#ffffff" font-size="34" font-weight="800" letter-spacing="-.5">WORLD TOUR</text>
+    <text x="30" y="234" fill="#ff8fb0" font-size="42" font-weight="800" letter-spacing="1">ENCORE</text>
+    <rect x="30" y="256" width="48" height="3" fill="#ff5f7e"/>
+    <text x="30" y="292" fill="#ffffff" font-size="26" font-weight="800" letter-spacing="3">AURORA</text>
+    <text x="30" y="320" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">KSPO DOME · SEOUL</text>
+    <text x="30" y="356" fill="#ff8fb0" font-size="12" font-weight="700" letter-spacing="1">전석 매진 예상</text>
   </svg>`,
 
-  /* 여름의 마지막 노을 — 지는 해와 바다 */
-  band: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+  /* 녹턴 — 여름의 마지막, 수평선 */
+  band: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pb-sky__U__" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#1b2a6b"/><stop offset=".42" stop-color="#7b3f8f"/>
-        <stop offset=".68" stop-color="#e8654f"/><stop offset="1" stop-color="#ffb45e"/>
+      <linearGradient id="pb-bg__U__" x1="0" y1="0" x2=".4" y2="1">
+        <stop offset="0" stop-color="#0d1a4d"/><stop offset=".6" stop-color="#263d8c"/><stop offset="1" stop-color="#6f4aa2"/>
       </linearGradient>
-      <linearGradient id="pb-sun__U__" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#ff8a3d"/>
-      </linearGradient>
-      <linearGradient id="pb-sea__U__" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#2a1245"/><stop offset="1" stop-color="#0d0a24"/>
-      </linearGradient>
-      <filter id="pb-g__U__"><feGaussianBlur stdDeviation="9"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pb-sky__U__)"/>
-    <circle cx="160" cy="98" r="46" fill="#ffd08a" opacity=".45" filter="url(#pb-g__U__)"/>
-    <circle cx="160" cy="98" r="30" fill="url(#pb-sun__U__)"/>
-    <rect y="98" width="320" height="48" fill="url(#pb-sea__U__)"/>
-    <g stroke="#ffb45e" stroke-linecap="round" opacity=".75">
-      <path d="M138 106h44" stroke-width="2"/><path d="M144 114h32" stroke-width="1.6" opacity=".8"/>
-      <path d="M132 122h56" stroke-width="1.4" opacity=".6"/><path d="M148 130h24" stroke-width="1.2" opacity=".45"/>
+    <rect width="300" height="400" fill="url(#pb-bg__U__)"/>
+    <g stroke="#9fd0ff" stroke-linecap="round" opacity=".3">
+      <path d="M172 74h108" stroke-width="2"/><path d="M198 92h82" stroke-width="1.6"/>
+      <path d="M216 110h64" stroke-width="1.3"/><path d="M240 128h40" stroke-width="1"/>
     </g>
-    <g fill="#0d0a24" opacity=".85">
-      <path d="M0 132c26-10 44 6 70-2s40-12 66-4 44 12 74 4 44-8 110 2v14H0z"/>
-    </g>
-    <g fill="#fff" opacity=".55">
-      <circle cx="42" cy="22" r="1.2"/><circle cx="96" cy="14" r="1"/><circle cx="252" cy="20" r="1.1"/><circle cx="290" cy="34" r="1"/>
-    </g>
+    <text x="30" y="56" fill="#9fd0ff" font-size="12" font-weight="700" letter-spacing="3">2026.08.22 – 08.23</text>
+    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">SINGLE CONCERT</text>
+    <text x="30" y="190" fill="#ffffff" font-size="36" font-weight="800" letter-spacing="-.5">THE LAST</text>
+    <text x="30" y="234" fill="#8fe8ff" font-size="34" font-weight="800" letter-spacing="-.5">SUMMER LIVE</text>
+    <rect x="30" y="256" width="48" height="3" fill="#8fe8ff"/>
+    <text x="30" y="294" fill="#ffffff" font-size="30" font-weight="800" letter-spacing="4">녹턴</text>
+    <text x="30" y="322" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">예술의전당 콘서트홀</text>
+    <text x="30" y="358" fill="#9fd0ff" font-size="12" font-weight="700" letter-spacing="1">단독 공연</text>
   </svg>`,
 
-  /* 페스티벌 — 이퀄라이저 바와 조명 */
-  fest: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+  /* SEOUL SOUND — 페스티벌 블록 타이포 */
+  fest: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pf-bg__U__" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#04231f"/><stop offset=".5" stop-color="#062b3d"/><stop offset="1" stop-color="#0a1440"/>
+      <linearGradient id="pf-bg__U__" x1="0" y1="0" x2=".6" y2="1">
+        <stop offset="0" stop-color="#04241f"/><stop offset=".5" stop-color="#073c3c"/><stop offset="1" stop-color="#0b2c62"/>
       </linearGradient>
-      <linearGradient id="pf-b1__U__" x1="0" y1="1" x2="0" y2="0">
-        <stop offset="0" stop-color="#22c98f"/><stop offset="1" stop-color="#8ff5c8"/>
-      </linearGradient>
-      <linearGradient id="pf-b2__U__" x1="0" y1="1" x2="0" y2="0">
-        <stop offset="0" stop-color="#2f7bff"/><stop offset="1" stop-color="#8fd0ff"/>
-      </linearGradient>
-      <linearGradient id="pf-b3__U__" x1="0" y1="1" x2="0" y2="0">
-        <stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#ffe9a8"/>
-      </linearGradient>
-      <filter id="pf-g__U__"><feGaussianBlur stdDeviation="6"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pf-bg__U__)"/>
-    <g opacity=".5" filter="url(#pf-g__U__)">
-      <path d="M40 146L18 22h20z" fill="#22c98f"/><path d="M160 146l-8-128h18z" fill="#4a86ff"/><path d="M282 146l22-124h-20z" fill="#ffb020"/>
+    <rect width="300" height="400" fill="url(#pf-bg__U__)"/>
+    <g opacity=".92">
+      <rect x="196" y="86"  width="11" height="46" rx="2.5" fill="#22c98f"/>
+      <rect x="213" y="66"  width="11" height="66" rx="2.5" fill="#4a86ff"/>
+      <rect x="230" y="98"  width="11" height="34" rx="2.5" fill="#ffb020"/>
+      <rect x="247" y="54"  width="11" height="78" rx="2.5" fill="#22c98f"/>
+      <rect x="264" y="80"  width="11" height="52" rx="2.5" fill="#4a86ff"/>
     </g>
-    <g>
-      <rect x="18"  y="96"  width="15" height="50" rx="3" fill="url(#pf-b1__U__)"/>
-      <rect x="41"  y="66"  width="15" height="80" rx="3" fill="url(#pf-b2__U__)"/>
-      <rect x="64"  y="108" width="15" height="38" rx="3" fill="url(#pf-b3__U__)"/>
-      <rect x="87"  y="44"  width="15" height="102" rx="3" fill="url(#pf-b1__U__)"/>
-      <rect x="110" y="82"  width="15" height="64" rx="3" fill="url(#pf-b2__U__)"/>
-      <rect x="133" y="30"  width="15" height="116" rx="3" fill="url(#pf-b3__U__)"/>
-      <rect x="156" y="72"  width="15" height="74" rx="3" fill="url(#pf-b1__U__)"/>
-      <rect x="179" y="52"  width="15" height="94" rx="3" fill="url(#pf-b2__U__)"/>
-      <rect x="202" y="100" width="15" height="46" rx="3" fill="url(#pf-b3__U__)"/>
-      <rect x="225" y="60"  width="15" height="86" rx="3" fill="url(#pf-b1__U__)"/>
-      <rect x="248" y="90"  width="15" height="56" rx="3" fill="url(#pf-b2__U__)"/>
-      <rect x="271" y="38"  width="15" height="108" rx="3" fill="url(#pf-b3__U__)"/>
-      <rect x="294" y="86"  width="15" height="60" rx="3" fill="url(#pf-b1__U__)"/>
-    </g>
-    <g fill="#fff">
-      <circle cx="52" cy="24" r="2" opacity=".8"/><circle cx="124" cy="16" r="1.6" opacity=".6"/>
-      <circle cx="206" cy="26" r="2.2" opacity=".75"/><circle cx="264" cy="14" r="1.5" opacity=".55"/>
-    </g>
+    <text x="30" y="56" fill="#7ff0c4" font-size="12" font-weight="700" letter-spacing="3">2026.10.03 – 10.04</text>
+    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">2 DAY PASS</text>
+    <text x="30" y="190" fill="#ffffff" font-size="34" font-weight="800" letter-spacing="-1">SEOUL SOUND</text>
+    <text x="30" y="234" fill="#22c98f" font-size="40" font-weight="800" letter-spacing="-1">FESTIVAL</text>
+    <rect x="30" y="256" width="48" height="3" fill="#ffb020"/>
+    <text x="30" y="296" fill="#ffffff" font-size="32" font-weight="800" letter-spacing="1">2026</text>
+    <text x="30" y="324" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">서울월드컵경기장</text>
+    <text x="30" y="358" fill="#ffb020" font-size="12" font-weight="700" letter-spacing="1">LINE-UP 40 ARTISTS</text>
   </svg>`,
 
-  /* 그날의 파도 — 달빛과 겹치는 물결 */
-  musical: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
+  /* 그날의 파도 — 한글 제목이 주인공 */
+  musical: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pm-bg__U__" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#1a1005"/><stop offset=".5" stop-color="#5a1f1a"/><stop offset="1" stop-color="#2b0a14"/>
+      <linearGradient id="pm-bg__U__" x1="0" y1="0" x2=".5" y2="1">
+        <stop offset="0" stop-color="#2c1506"/><stop offset=".55" stop-color="#712316"/><stop offset="1" stop-color="#400b19"/>
       </linearGradient>
-      <linearGradient id="pm-w1__U__" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#ff5f4d"/>
-      </linearGradient>
-      <linearGradient id="pm-w2__U__" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#ff5f4d"/><stop offset="1" stop-color="#a8243f"/>
-      </linearGradient>
-      <radialGradient id="pm-m__U__"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#ffd98a"/></radialGradient>
-      <filter id="pm-g__U__"><feGaussianBlur stdDeviation="8"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pm-bg__U__)"/>
-    <circle cx="246" cy="40" r="30" fill="#ffd98a" opacity=".35" filter="url(#pm-g__U__)"/>
-    <circle cx="246" cy="40" r="17" fill="url(#pm-m__U__)"/>
-    <g opacity=".28" fill="none" stroke="#ffe0a8">
-      <path d="M0 86c40-18 76 10 116-6s72-20 108-4 62 16 96 2" stroke-width="1.4"/>
-      <path d="M0 74c44-16 72 12 118-4s70-18 104-2 64 14 98 0" stroke-width="1"/>
+    <rect width="300" height="400" fill="url(#pm-bg__U__)"/>
+    <circle cx="238" cy="84" r="32" fill="#ffd98a" opacity=".92"/>
+    <circle cx="238" cy="84" r="54" fill="none" stroke="#ffd98a" stroke-width="1" opacity=".26"/>
+    <text x="30" y="56" fill="#ffc46b" font-size="12" font-weight="700" letter-spacing="3">2026.11.05 – 11.09</text>
+    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">MUSICAL</text>
+    <text x="30" y="192" fill="#ffffff" font-size="46" font-weight="800" letter-spacing="-1">그날의</text>
+    <text x="30" y="240" fill="#ffb887" font-size="46" font-weight="800" letter-spacing="-1">파도</text>
+    <rect x="30" y="262" width="48" height="3" fill="#ff5f4d"/>
+    <g fill="none" stroke="#ffc46b" opacity=".34">
+      <path d="M-6 300c40-14 74 9 114-4s70-14 104 0 62 10 94 0" stroke-width="1.5"/>
+      <path d="M-6 314c44-12 70 10 116-2s68-12 102 0 60 9 94 0" stroke-width="1"/>
     </g>
-    <path d="M-10 104c46-26 88 12 138-8s94-14 140 10 62 6 62 6v42H-10z" fill="url(#pm-w2__U__)" opacity=".85"/>
-    <path d="M-10 122c52-22 94 10 146-8s90-8 194 8v30H-10z" fill="url(#pm-w1__U__)" opacity=".9"/>
-    <path d="M-10 136c60-14 110 8 168-4s100-4 172 6v14H-10z" fill="#2b0a14"/>
+    <text x="30" y="352" fill="#ffffff" font-size="18" font-weight="800" letter-spacing="2">캐스팅 A팀</text>
+    <text x="30" y="376" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">예술의전당 콘서트홀 · 막공</text>
   </svg>`
 };
 
