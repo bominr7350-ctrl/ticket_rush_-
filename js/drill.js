@@ -66,6 +66,8 @@ const Drill = {
 
   open() {
     TP.ui.topbar(false);          // 전체 연습용 상단 상태바는 이 모드에서 쓰지 않는다
+    // 홈을 벗어나므로 메뉴 안내 말풍선을 치운다 (홈으로 돌아오면 다시 뜬다)
+    if (TP.App && TP.App.hideMenuHint) TP.App.hideMenuHint();
     this.buildSetup();
     this.renderRecords();
     TP.ui.show('cd-setup');

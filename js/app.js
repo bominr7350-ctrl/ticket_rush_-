@@ -186,10 +186,12 @@ const App = {
       btn.setAttribute('aria-expanded', on ? 'true' : 'false');
       panel.classList.toggle('hidden', !on);
       back.classList.toggle('hidden', !on);
-      if (on) { this.paintMenu(); this.hideMenuHint(true); }
+      // 말풍선이 메뉴 패널과 같은 자리에 있어 열려 있는 동안만 비켜준다
+      if (on) { this.paintMenu(); this.hideMenuHint(); }
+      else if ($('#screen-home.active')) this.showMenuHint();
     };
 
-    $('#btn-hint-close').onclick = () => this.hideMenuHint(true);
+    $('#btn-hint-close').onclick = () => this.hideMenuHint();
     this.showMenuHint();
 
     btn.onclick = () => setOpen(panel.classList.contains('hidden'));
@@ -209,22 +211,14 @@ const App = {
   },
 
   /* ─────────── 메뉴 안내 말풍선 ───────────
-     메뉴를 한 번이라도 열었으면 다시 띄우지 않는다. */
-  HINT_KEY: 'ticketrush.menuHintSeen',
-
+     홈 화면에서는 항상 띄운다. 한 번 봤다고 없애면 메뉴 위치를 다시 잊게 된다.
+     연습 화면과 메뉴 패널을 가릴 때만 잠깐 숨긴다. */
   showMenuHint() {
-    let seen = false;
-    try { seen = !!localStorage.getItem(this.HINT_KEY); } catch (e) {}
-    if (seen) return;
     $('#menu-hint').classList.remove('hidden');
   },
 
-  /** @param {boolean} remember 다음에도 안 띄우려면 true */
-  hideMenuHint(remember) {
+  hideMenuHint() {
     $('#menu-hint').classList.add('hidden');
-    if (remember) {
-      try { localStorage.setItem(this.HINT_KEY, '1'); } catch (e) {}
-    }
   },
 
   /** 지금 어느 모드에 있는지 표시. 화면 상태에서 직접 읽어 모듈 간 상태 공유를 피한다 */
@@ -331,8 +325,8 @@ const App = {
 
     T.start();
     T.log('연습 시작', 'info');
-    // 연습 화면 위로 안내가 떠 있으면 방해된다. 아직 못 봤다면 홈에서 다시 띄운다.
-    this.hideMenuHint(false);
+    // 연습 화면 위로 안내가 떠 있으면 방해된다. 홈으로 돌아오면 다시 띄운다.
+    this.hideMenuHint();
     ui.topbar(true);
     this.startLoop();
     this.goStandby();
