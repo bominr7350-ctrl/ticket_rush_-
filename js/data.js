@@ -232,115 +232,173 @@ TP.venueOf = function (cfg) {
 
 /* ─────────── 공연 포스터 ───────────
    외부 이미지 없이 SVG 로 직접 그린다. (파일 하나로 실행되어야 하므로)
-   실제 공연 포스터처럼 큰 제목 타이포가 주인공이고 배경은 색면만 둔다.
+   실제 종이 티켓 모양 — 크림색 용지에 상단 색 띠, 절취선, 좌석 칸, 바코드.
+   공연마다 강조색과 좌석 정보만 다르고 판형은 공유한다.
 
    레이아웃 — viewBox 는 3:4 세로(300x400).
      오픈 대기 화면은 3:4 그대로 전체가 보인다.
-     홈 카드는 높이가 104px 로 고정이고 너비는 210~320px 사이라, slice 로
-     세로 중앙만 잘려 보인다. 카드가 넓어질수록 보이는 띠가 좁아지는데
-     가장 좁은 경우가 약 98단위(y 151~249)다.
-     그래서 제목 두 줄을 baseline y=190 / y=234 에 고정해 어떤 카드 너비에서도
-     제목이 잘리지 않게 한다. 날짜·아티스트·공연장은 그 위아래에 둬서
-     카드에서는 잘려 나가고 대기 화면에서만 보인다.
-     장식 도형도 y<150 또는 y>350 에만 둬서 제목과 겹치지 않게 한다.
+     홈 카드는 높이 104px 고정에 너비가 210~320px 로 변해 slice 로 세로 중앙만
+     보이는데, 가장 좁은 경우가 약 98단위(y 151~249)다.
+     그래서 큰 제목(y=190)과 아티스트(y=222), 첫 절취선(y=246)을 그 안에 넣어
+     어떤 카드 너비에서도 제목이 잘리지 않게 한다.
+     상단 라벨과 하단 좌석칸·바코드는 대기 화면에서만 보인다.
 
-   같은 포스터가 홈 카드와 대기 화면에 동시에 존재하므로 gradient id 가
+   같은 포스터가 홈 카드와 대기 화면에 동시에 존재하므로 pattern/gradient id 가
    문서 안에서 중복된다. 중복되면 url(#..) 이 앞쪽(숨겨진 홈 카드) 것을 가리켜
    채색이 깨지므로, id 에 __U__ 자리표시자를 두고 TP.posterSVG() 가
    그릴 때마다 서로 다른 접미사로 치환한다. */
 TP.POSTERS = {
 
-  /* AURORA — 보라빛 헤일로 */
+  /* AURORA — 레드 */
   idol: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pa-bg__U__" x1="0" y1="0" x2=".7" y2="1">
-        <stop offset="0" stop-color="#26104a"/><stop offset=".55" stop-color="#4e1342"/><stop offset="1" stop-color="#7a123c"/>
-      </linearGradient>
+      <pattern id="pa-paper__U__" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" fill="#f4efe4"/><rect width="4" height="1" fill="#eee7d8"/>
+      </pattern>
     </defs>
-    <rect width="300" height="400" fill="url(#pa-bg__U__)"/>
-    <g fill="none" stroke="#ff8fb0" opacity=".26">
-      <circle cx="242" cy="88" r="60" stroke-width="1"/>
-      <circle cx="242" cy="88" r="90" stroke-width="1" opacity=".6"/>
-      <circle cx="242" cy="88" r="34" stroke-width="1.4"/>
+    <rect width="300" height="400" fill="url(#pa-paper__U__)"/>
+    <rect width="300" height="9" fill="#c8342f"/>
+    <text x="26" y="46" fill="#8a7f6d" font-size="10" font-weight="700" letter-spacing="2.5">ADMIT ONE · 입장권</text>
+    <text x="26" y="74" fill="#c8342f" font-size="10" font-weight="700" letter-spacing="1.5">2026.09.11 — 09.13</text>
+    <text x="26" y="126" fill="#1b1a17" font-size="15" font-weight="700" letter-spacing="1.5">2026 WORLD TOUR</text>
+    <text x="26" y="190" fill="#c8342f" font-size="46" font-weight="800" letter-spacing="-1.5">ENCORE</text>
+    <text x="26" y="222" fill="#1b1a17" font-size="20" font-weight="800" letter-spacing="4">AURORA</text>
+    <path d="M12 246h276" stroke="#c9bfab" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="246" r="7" fill="#0b0d12"/><circle cx="300" cy="246" r="7" fill="#0b0d12"/>
+    <g fill="#8a7f6d" font-size="9" font-weight="700" letter-spacing="1">
+      <text x="26" y="274">DATE</text><text x="124" y="274">SEAT</text><text x="216" y="274">GATE</text>
     </g>
-    <text x="30" y="56" fill="#ffb3c8" font-size="12" font-weight="700" letter-spacing="3">2026.09.11 – 09.13</text>
-    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">2026 WORLD TOUR</text>
-    <text x="30" y="190" fill="#ffffff" font-size="34" font-weight="800" letter-spacing="-.5">WORLD TOUR</text>
-    <text x="30" y="234" fill="#ff8fb0" font-size="42" font-weight="800" letter-spacing="1">ENCORE</text>
-    <rect x="30" y="256" width="48" height="3" fill="#ff5f7e"/>
-    <text x="30" y="292" fill="#ffffff" font-size="26" font-weight="800" letter-spacing="3">AURORA</text>
-    <text x="30" y="320" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">KSPO DOME · SEOUL</text>
-    <text x="30" y="356" fill="#ff8fb0" font-size="12" font-weight="700" letter-spacing="1">전석 매진 예상</text>
+    <g fill="#1b1a17" font-size="14" font-weight="800">
+      <text x="26" y="294">09.12 18:00</text><text x="124" y="294">FL A 3열</text><text x="216" y="294">2</text>
+    </g>
+    <path d="M12 314h276" stroke="#c9bfab" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="314" r="7" fill="#0b0d12"/><circle cx="300" cy="314" r="7" fill="#0b0d12"/>
+    <g fill="#1b1a17">
+      <rect x="26" y="332" width="3" height="42"/><rect x="33" y="332" width="1.5" height="42"/>
+      <rect x="38" y="332" width="4" height="42"/><rect x="46" y="332" width="1.5" height="42"/>
+      <rect x="51" y="332" width="2.5" height="42"/><rect x="57" y="332" width="4" height="42"/>
+      <rect x="65" y="332" width="1.5" height="42"/><rect x="70" y="332" width="3" height="42"/>
+      <rect x="77" y="332" width="2" height="42"/><rect x="83" y="332" width="4" height="42"/>
+      <rect x="91" y="332" width="1.5" height="42"/><rect x="96" y="332" width="3" height="42"/>
+      <rect x="103" y="332" width="4" height="42"/><rect x="111" y="332" width="1.5" height="42"/>
+      <rect x="116" y="332" width="2.5" height="42"/><rect x="122" y="332" width="3.5" height="42"/>
+    </g>
+    <text x="216" y="360" fill="#8a7f6d" font-size="9.5" font-weight="700" letter-spacing=".5">NO.0912</text>
+    <text x="26" y="392" fill="#8a7f6d" font-size="9.5" letter-spacing=".5">KSPO DOME · SEOUL</text>
   </svg>`,
 
-  /* 녹턴 — 여름의 마지막, 수평선 */
+  /* 녹턴 — 딥 블루 */
   band: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pb-bg__U__" x1="0" y1="0" x2=".4" y2="1">
-        <stop offset="0" stop-color="#0d1a4d"/><stop offset=".6" stop-color="#263d8c"/><stop offset="1" stop-color="#6f4aa2"/>
-      </linearGradient>
+      <pattern id="pb-paper__U__" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" fill="#f2f1e8"/><rect width="4" height="1" fill="#e9e8dd"/>
+      </pattern>
     </defs>
-    <rect width="300" height="400" fill="url(#pb-bg__U__)"/>
-    <g stroke="#9fd0ff" stroke-linecap="round" opacity=".3">
-      <path d="M172 74h108" stroke-width="2"/><path d="M198 92h82" stroke-width="1.6"/>
-      <path d="M216 110h64" stroke-width="1.3"/><path d="M240 128h40" stroke-width="1"/>
+    <rect width="300" height="400" fill="url(#pb-paper__U__)"/>
+    <rect width="300" height="9" fill="#1f4e9c"/>
+    <text x="26" y="46" fill="#7d8494" font-size="10" font-weight="700" letter-spacing="2.5">ADMIT ONE · 입장권</text>
+    <text x="26" y="74" fill="#1f4e9c" font-size="10" font-weight="700" letter-spacing="1.5">2026.08.22 — 08.23</text>
+    <text x="26" y="126" fill="#16181d" font-size="15" font-weight="700" letter-spacing="1.5">THE LAST · 단독공연</text>
+    <text x="26" y="190" fill="#1f4e9c" font-size="35" font-weight="800" letter-spacing="-1.5">SUMMER LIVE</text>
+    <text x="26" y="222" fill="#16181d" font-size="22" font-weight="800" letter-spacing="5">녹턴</text>
+    <path d="M12 246h276" stroke="#c4c3b6" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="246" r="7" fill="#0b0d12"/><circle cx="300" cy="246" r="7" fill="#0b0d12"/>
+    <g fill="#7d8494" font-size="9" font-weight="700" letter-spacing="1">
+      <text x="26" y="274">DATE</text><text x="124" y="274">SEAT</text><text x="216" y="274">GATE</text>
     </g>
-    <text x="30" y="56" fill="#9fd0ff" font-size="12" font-weight="700" letter-spacing="3">2026.08.22 – 08.23</text>
-    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">SINGLE CONCERT</text>
-    <text x="30" y="190" fill="#ffffff" font-size="36" font-weight="800" letter-spacing="-.5">THE LAST</text>
-    <text x="30" y="234" fill="#8fe8ff" font-size="34" font-weight="800" letter-spacing="-.5">SUMMER LIVE</text>
-    <rect x="30" y="256" width="48" height="3" fill="#8fe8ff"/>
-    <text x="30" y="294" fill="#ffffff" font-size="30" font-weight="800" letter-spacing="4">녹턴</text>
-    <text x="30" y="322" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">예술의전당 콘서트홀</text>
-    <text x="30" y="358" fill="#9fd0ff" font-size="12" font-weight="700" letter-spacing="1">단독 공연</text>
+    <g fill="#16181d" font-size="14" font-weight="800">
+      <text x="26" y="294">08.23 19:00</text><text x="124" y="294">1층 중앙</text><text x="216" y="294">1</text>
+    </g>
+    <path d="M12 314h276" stroke="#c4c3b6" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="314" r="7" fill="#0b0d12"/><circle cx="300" cy="314" r="7" fill="#0b0d12"/>
+    <g fill="#16181d">
+      <rect x="26" y="332" width="4" height="42"/><rect x="34" y="332" width="1.5" height="42"/>
+      <rect x="39" y="332" width="2.5" height="42"/><rect x="45" y="332" width="4" height="42"/>
+      <rect x="53" y="332" width="1.5" height="42"/><rect x="58" y="332" width="3" height="42"/>
+      <rect x="65" y="332" width="2" height="42"/><rect x="71" y="332" width="4" height="42"/>
+      <rect x="79" y="332" width="1.5" height="42"/><rect x="84" y="332" width="3" height="42"/>
+      <rect x="91" y="332" width="4" height="42"/><rect x="99" y="332" width="1.5" height="42"/>
+      <rect x="104" y="332" width="2.5" height="42"/><rect x="110" y="332" width="3.5" height="42"/>
+      <rect x="118" y="332" width="1.5" height="42"/><rect x="123" y="332" width="3" height="42"/>
+    </g>
+    <text x="216" y="360" fill="#7d8494" font-size="9.5" font-weight="700" letter-spacing=".5">NO.0823</text>
+    <text x="26" y="392" fill="#7d8494" font-size="9.5" letter-spacing=".5">예술의전당 콘서트홀</text>
   </svg>`,
 
-  /* SEOUL SOUND — 페스티벌 블록 타이포 */
+  /* SEOUL SOUND — 그린 */
   fest: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pf-bg__U__" x1="0" y1="0" x2=".6" y2="1">
-        <stop offset="0" stop-color="#04241f"/><stop offset=".5" stop-color="#073c3c"/><stop offset="1" stop-color="#0b2c62"/>
-      </linearGradient>
+      <pattern id="pf-paper__U__" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" fill="#eff2e6"/><rect width="4" height="1" fill="#e5e9da"/>
+      </pattern>
     </defs>
-    <rect width="300" height="400" fill="url(#pf-bg__U__)"/>
-    <g opacity=".92">
-      <rect x="196" y="86"  width="11" height="46" rx="2.5" fill="#22c98f"/>
-      <rect x="213" y="66"  width="11" height="66" rx="2.5" fill="#4a86ff"/>
-      <rect x="230" y="98"  width="11" height="34" rx="2.5" fill="#ffb020"/>
-      <rect x="247" y="54"  width="11" height="78" rx="2.5" fill="#22c98f"/>
-      <rect x="264" y="80"  width="11" height="52" rx="2.5" fill="#4a86ff"/>
+    <rect width="300" height="400" fill="url(#pf-paper__U__)"/>
+    <rect width="300" height="9" fill="#12795a"/>
+    <text x="26" y="46" fill="#79857a" font-size="10" font-weight="700" letter-spacing="2.5">2 DAY PASS · 자유입장</text>
+    <text x="26" y="74" fill="#12795a" font-size="10" font-weight="700" letter-spacing="1.5">2026.10.03 — 10.04</text>
+    <text x="26" y="126" fill="#171a17" font-size="15" font-weight="700" letter-spacing="1.5">FESTIVAL · LINE-UP 40</text>
+    <text x="26" y="190" fill="#12795a" font-size="35" font-weight="800" letter-spacing="-1.5">SEOUL SOUND</text>
+    <text x="26" y="222" fill="#171a17" font-size="21" font-weight="800" letter-spacing="3">2026</text>
+    <path d="M12 246h276" stroke="#c2c7b6" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="246" r="7" fill="#0b0d12"/><circle cx="300" cy="246" r="7" fill="#0b0d12"/>
+    <g fill="#79857a" font-size="9" font-weight="700" letter-spacing="1">
+      <text x="26" y="274">DATE</text><text x="124" y="274">ZONE</text><text x="216" y="274">GATE</text>
     </g>
-    <text x="30" y="56" fill="#7ff0c4" font-size="12" font-weight="700" letter-spacing="3">2026.10.03 – 10.04</text>
-    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">2 DAY PASS</text>
-    <text x="30" y="190" fill="#ffffff" font-size="34" font-weight="800" letter-spacing="-1">SEOUL SOUND</text>
-    <text x="30" y="234" fill="#22c98f" font-size="40" font-weight="800" letter-spacing="-1">FESTIVAL</text>
-    <rect x="30" y="256" width="48" height="3" fill="#ffb020"/>
-    <text x="30" y="296" fill="#ffffff" font-size="32" font-weight="800" letter-spacing="1">2026</text>
-    <text x="30" y="324" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">서울월드컵경기장</text>
-    <text x="30" y="358" fill="#ffb020" font-size="12" font-weight="700" letter-spacing="1">LINE-UP 40 ARTISTS</text>
+    <g fill="#171a17" font-size="14" font-weight="800">
+      <text x="26" y="294">10.03 14:00</text><text x="124" y="294">스탠딩 A</text><text x="216" y="294">W3</text>
+    </g>
+    <path d="M12 314h276" stroke="#c2c7b6" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="314" r="7" fill="#0b0d12"/><circle cx="300" cy="314" r="7" fill="#0b0d12"/>
+    <g fill="#171a17">
+      <rect x="26" y="332" width="2.5" height="42"/><rect x="32" y="332" width="4" height="42"/>
+      <rect x="40" y="332" width="1.5" height="42"/><rect x="45" y="332" width="3" height="42"/>
+      <rect x="52" y="332" width="4" height="42"/><rect x="60" y="332" width="1.5" height="42"/>
+      <rect x="65" y="332" width="2" height="42"/><rect x="71" y="332" width="4" height="42"/>
+      <rect x="79" y="332" width="2.5" height="42"/><rect x="85" y="332" width="1.5" height="42"/>
+      <rect x="90" y="332" width="4" height="42"/><rect x="98" y="332" width="3" height="42"/>
+      <rect x="105" y="332" width="1.5" height="42"/><rect x="110" y="332" width="2.5" height="42"/>
+      <rect x="116" y="332" width="4" height="42"/><rect x="124" y="332" width="1.5" height="42"/>
+    </g>
+    <text x="216" y="360" fill="#79857a" font-size="9.5" font-weight="700" letter-spacing=".5">NO.1003</text>
+    <text x="26" y="392" fill="#79857a" font-size="9.5" letter-spacing=".5">서울월드컵경기장</text>
   </svg>`,
 
-  /* 그날의 파도 — 한글 제목이 주인공 */
+  /* 그날의 파도 — 버건디 */
   musical: `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" font-family="'Pretendard','Malgun Gothic','Segoe UI',sans-serif">
     <defs>
-      <linearGradient id="pm-bg__U__" x1="0" y1="0" x2=".5" y2="1">
-        <stop offset="0" stop-color="#2c1506"/><stop offset=".55" stop-color="#712316"/><stop offset="1" stop-color="#400b19"/>
-      </linearGradient>
+      <pattern id="pm-paper__U__" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" fill="#f4ece7"/><rect width="4" height="1" fill="#ece2db"/>
+      </pattern>
     </defs>
-    <rect width="300" height="400" fill="url(#pm-bg__U__)"/>
-    <circle cx="238" cy="84" r="32" fill="#ffd98a" opacity=".92"/>
-    <circle cx="238" cy="84" r="54" fill="none" stroke="#ffd98a" stroke-width="1" opacity=".26"/>
-    <text x="30" y="56" fill="#ffc46b" font-size="12" font-weight="700" letter-spacing="3">2026.11.05 – 11.09</text>
-    <text x="30" y="92" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="6" opacity=".62">MUSICAL</text>
-    <text x="30" y="192" fill="#ffffff" font-size="46" font-weight="800" letter-spacing="-1">그날의</text>
-    <text x="30" y="240" fill="#ffb887" font-size="46" font-weight="800" letter-spacing="-1">파도</text>
-    <rect x="30" y="262" width="48" height="3" fill="#ff5f4d"/>
-    <g fill="none" stroke="#ffc46b" opacity=".34">
-      <path d="M-6 300c40-14 74 9 114-4s70-14 104 0 62 10 94 0" stroke-width="1.5"/>
-      <path d="M-6 314c44-12 70 10 116-2s68-12 102 0 60 9 94 0" stroke-width="1"/>
+    <rect width="300" height="400" fill="url(#pm-paper__U__)"/>
+    <rect width="300" height="9" fill="#8c2340"/>
+    <text x="26" y="46" fill="#8b7a78" font-size="10" font-weight="700" letter-spacing="2.5">ADMIT ONE · 입장권</text>
+    <text x="26" y="74" fill="#8c2340" font-size="10" font-weight="700" letter-spacing="1.5">2026.11.05 — 11.09</text>
+    <text x="26" y="126" fill="#1c1618" font-size="15" font-weight="700" letter-spacing="1.5">MUSICAL · 캐스팅 A팀</text>
+    <text x="26" y="190" fill="#8c2340" font-size="40" font-weight="800" letter-spacing="-1">그날의 파도</text>
+    <text x="26" y="222" fill="#1c1618" font-size="20" font-weight="800" letter-spacing="3">막공 · 11.09</text>
+    <path d="M12 246h276" stroke="#cbbcb6" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="246" r="7" fill="#0b0d12"/><circle cx="300" cy="246" r="7" fill="#0b0d12"/>
+    <g fill="#8b7a78" font-size="9" font-weight="700" letter-spacing="1">
+      <text x="26" y="274">DATE</text><text x="124" y="274">SEAT</text><text x="216" y="274">GATE</text>
     </g>
-    <text x="30" y="352" fill="#ffffff" font-size="18" font-weight="800" letter-spacing="2">캐스팅 A팀</text>
-    <text x="30" y="376" fill="#ffffff" font-size="11" opacity=".52" letter-spacing="1">예술의전당 콘서트홀 · 막공</text>
+    <g fill="#1c1618" font-size="14" font-weight="800">
+      <text x="26" y="294">11.09 19:30</text><text x="124" y="294">1층 5열</text><text x="216" y="294">1</text>
+    </g>
+    <path d="M12 314h276" stroke="#cbbcb6" stroke-width="1.4" stroke-dasharray="5 5"/>
+    <circle cx="0" cy="314" r="7" fill="#0b0d12"/><circle cx="300" cy="314" r="7" fill="#0b0d12"/>
+    <g fill="#1c1618">
+      <rect x="26" y="332" width="1.5" height="42"/><rect x="31" y="332" width="4" height="42"/>
+      <rect x="39" y="332" width="2.5" height="42"/><rect x="45" y="332" width="1.5" height="42"/>
+      <rect x="50" y="332" width="4" height="42"/><rect x="58" y="332" width="3" height="42"/>
+      <rect x="65" y="332" width="1.5" height="42"/><rect x="70" y="332" width="4" height="42"/>
+      <rect x="78" y="332" width="2" height="42"/><rect x="84" y="332" width="3.5" height="42"/>
+      <rect x="92" y="332" width="1.5" height="42"/><rect x="97" y="332" width="2.5" height="42"/>
+      <rect x="103" y="332" width="4" height="42"/><rect x="111" y="332" width="1.5" height="42"/>
+      <rect x="116" y="332" width="3" height="42"/><rect x="123" y="332" width="2.5" height="42"/>
+    </g>
+    <text x="216" y="360" fill="#8b7a78" font-size="9.5" font-weight="700" letter-spacing=".5">NO.1109</text>
+    <text x="26" y="392" fill="#8b7a78" font-size="9.5" letter-spacing=".5">예술의전당 콘서트홀</text>
   </svg>`
 };
 

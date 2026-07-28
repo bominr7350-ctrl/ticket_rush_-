@@ -118,13 +118,9 @@ input{font-family:inherit}
 }
 .concert:hover{border-color:var(--border-2);transform:translateY(-2px)}
 .concert.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 8px 26px rgba(255,71,87,.16)}
+/* 티켓 포스터가 크림색 용지라 어둡게 덮는 오버레이를 두지 않는다 */
 .c-art{height:104px;position:relative;overflow:hidden;background:var(--surface-2)}
 .c-art svg{display:block;width:100%;height:100%}
-/* 아래쪽을 살짝 어둡게 깔아 카드 본문과 자연스럽게 이어지게 */
-.c-art::after{
-  content:"";position:absolute;inset:auto 0 0 0;height:34px;pointer-events:none;
-  background:linear-gradient(180deg,transparent,rgba(22,26,35,.9));
-}
 .c-body{padding:13px 14px 15px}
 .c-name{font-weight:700;font-size:14.5px;line-height:1.35}
 .c-venue{color:var(--muted);font-size:12px;margin-top:5px}
