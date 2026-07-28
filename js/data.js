@@ -12,147 +12,203 @@ TP.GRADES = {
 };
 
 /* ─────────── 공연장 레이아웃 ───────────
-   rows = 무대에서 먼 순서대로 배치되는 구역 줄.
+   rows = 무대에서 먼 순서대로 배치되는 구역 줄. (앞 줄일수록 선호도가 높다)
    r/c 는 기준 규모이며 난이도의 목표 좌석수에 맞춰 비례 축소/확대된다.
 
-   좌석배치도 기하 — 실제 예매처의 배치도처럼 무대를 중심으로 부채꼴로 펼친다.
-     map.cx / map.cy : 부채꼴의 중심 (무대 바로 아래)
-     ri / ro         : 구역의 안쪽 · 바깥쪽 반지름
-     a1 / a2         : 구역의 각도 범위 (도. 0=오른쪽, 90=아래, 180=왼쪽)
-                       → 각도가 클수록 화면 왼쪽이다 */
+   shape — 구역의 모양. 공연장마다 실제 구조가 다르므로 세 가지를 섞어 쓴다.
+     { t:'rect', x, y, w, h }              사각 블록. 아레나의 플로어, 경기장의 스탠드.
+     { t:'arc',  ri, ro, a1, a2 }          도넛 조각. 무대를 감싸는 층.
+                                           ri/ro = 안쪽·바깥쪽 반지름 (map.cx/cy 기준)
+                                           a1/a2 = 각도(도). 0=오른쪽, 90=아래, 180=왼쪽
+                                           → 각도가 클수록 화면 왼쪽. 음수면 무대 옆까지 올라간다.
+     { t:'poly', pts:'x,y x,y ...' }       임의 다각형.
+
+   ※ 실제 공연장의 구조(플로어 배치, 층 수, 감싸는 각도, 스탠드 형태)를 참고해
+     비율을 맞춘 재구성이다. 공식 좌석배치도를 그대로 옮긴 것이 아니므로
+     구역 번호와 좌석 수는 실제와 다르다. */
 TP.VENUES = {
-  arena: {
-    name: 'KSPO DOME (체조경기장)',
-    label: '체조경기장',
-    desc: '국내 콘서트의 기준이 되는 공연장. 플로어와 3개 층으로 구성됩니다.',
-    map: { viewBox: '0 0 600 440', cx: 300, cy: 62, stage: { x: 225, y: 14, w: 150, h: 30 } },
-    rows: [
-      [
-        { id: 'FA', name: '플로어 A', grade: 'VIP', r: 10, c: 14, ri: 58,  ro: 152, a1: 110, a2: 145 },
-        { id: 'FB', name: '플로어 B', grade: 'VIP', r: 10, c: 14, ri: 58,  ro: 152, a1: 72,  a2: 108 },
-        { id: 'FC', name: '플로어 C', grade: 'VIP', r: 10, c: 14, ri: 58,  ro: 152, a1: 35,  a2: 70 }
-      ],
-      [
-        { id: 'Z1', name: '1층 1구역', grade: 'R', r: 12, c: 16, ri: 160, ro: 232, a1: 108, a2: 145 },
-        { id: 'Z2', name: '1층 2구역', grade: 'R', r: 12, c: 18, ri: 160, ro: 232, a1: 70,  a2: 106 },
-        { id: 'Z3', name: '1층 3구역', grade: 'R', r: 12, c: 16, ri: 160, ro: 232, a1: 35,  a2: 68 }
-      ],
-      [
-        { id: 'Z4', name: '2층 4구역', grade: 'S', r: 14, c: 16, ri: 240, ro: 302, a1: 108, a2: 145 },
-        { id: 'Z5', name: '2층 5구역', grade: 'S', r: 14, c: 18, ri: 240, ro: 302, a1: 70,  a2: 106 },
-        { id: 'Z6', name: '2층 6구역', grade: 'S', r: 14, c: 16, ri: 240, ro: 302, a1: 35,  a2: 68 }
-      ],
-      [
-        { id: 'Z7', name: '3층 7구역', grade: 'A', r: 12, c: 18, ri: 310, ro: 352, a1: 92, a2: 145 },
-        { id: 'Z8', name: '3층 8구역', grade: 'A', r: 12, c: 18, ri: 310, ro: 352, a1: 35, a2: 88 }
-      ]
-    ]
-  },
-  gym: {
-    name: '잠실실내체육관',
-    label: '실내체육관',
-    desc: '중형 원형 경기장. 무대와 가깝고 층이 낮아 시야가 고른 편입니다.',
-    map: { viewBox: '0 0 600 420', cx: 300, cy: 58, stage: { x: 230, y: 12, w: 140, h: 28 } },
-    rows: [
-      [
-        { id: 'GA', name: '플로어 A', grade: 'VIP', r: 9, c: 14, ri: 55,  ro: 150, a1: 108, a2: 148 },
-        { id: 'GB', name: '플로어 B', grade: 'VIP', r: 9, c: 14, ri: 55,  ro: 150, a1: 74,  a2: 106 },
-        { id: 'GC', name: '플로어 C', grade: 'VIP', r: 9, c: 14, ri: 55,  ro: 150, a1: 32,  a2: 72 }
-      ],
-      [
-        { id: 'G1', name: '1층 A구역', grade: 'R', r: 11, c: 16, ri: 158, ro: 228, a1: 106, a2: 148 },
-        { id: 'G2', name: '1층 B구역', grade: 'R', r: 11, c: 18, ri: 158, ro: 228, a1: 68,  a2: 104 },
-        { id: 'G3', name: '1층 C구역', grade: 'R', r: 11, c: 16, ri: 158, ro: 228, a1: 32,  a2: 66 }
-      ],
-      [
-        { id: 'G4', name: '2층 A구역', grade: 'S', r: 12, c: 16, ri: 236, ro: 300, a1: 106, a2: 148 },
-        { id: 'G5', name: '2층 B구역', grade: 'S', r: 12, c: 18, ri: 236, ro: 300, a1: 68,  a2: 104 },
-        { id: 'G6', name: '2층 C구역', grade: 'S', r: 12, c: 16, ri: 236, ro: 300, a1: 32,  a2: 66 }
-      ],
-      [
-        { id: 'G7', name: '3층 A구역', grade: 'A', r: 10, c: 18, ri: 308, ro: 352, a1: 90, a2: 148 },
-        { id: 'G8', name: '3층 B구역', grade: 'A', r: 10, c: 18, ri: 308, ro: 352, a1: 32, a2: 88 }
-      ]
-    ]
-  },
-  dome: {
-    name: '고척스카이돔',
-    label: '돔구장',
-    desc: '국내 최대 규모 실내 돔. 좌석은 많지만 그만큼 사람도 몰립니다.',
-    map: { viewBox: '0 0 600 440', cx: 300, cy: 60, stage: { x: 225, y: 14, w: 150, h: 30 } },
-    rows: [
-      [
-        { id: 'D1', name: '그라운드 A', grade: 'VIP', r: 11, c: 16, ri: 56,  ro: 150, a1: 108, a2: 144 },
-        { id: 'D2', name: '그라운드 B', grade: 'VIP', r: 11, c: 16, ri: 56,  ro: 150, a1: 72,  a2: 106 },
-        { id: 'D3', name: '그라운드 C', grade: 'VIP', r: 11, c: 16, ri: 56,  ro: 150, a1: 36,  a2: 70 }
-      ],
-      [
-        { id: 'D4', name: '내야 1루',  grade: 'R', r: 13, c: 18, ri: 158, ro: 232, a1: 108, a2: 144 },
-        { id: 'D5', name: '내야 중앙', grade: 'R', r: 13, c: 20, ri: 158, ro: 232, a1: 72,  a2: 106 },
-        { id: 'D6', name: '내야 3루',  grade: 'R', r: 13, c: 18, ri: 158, ro: 232, a1: 36,  a2: 70 }
-      ],
-      [
-        { id: 'D7', name: '외야 좌측', grade: 'S', r: 15, c: 20, ri: 240, ro: 310, a1: 108, a2: 144 },
-        { id: 'D8', name: '외야 중앙', grade: 'S', r: 15, c: 22, ri: 240, ro: 310, a1: 72,  a2: 106 },
-        { id: 'D9', name: '외야 우측', grade: 'S', r: 15, c: 20, ri: 240, ro: 310, a1: 36,  a2: 70 }
-      ],
-      [
-        { id: 'DA', name: '상단 좌측', grade: 'A', r: 13, c: 22, ri: 318, ro: 368, a1: 92, a2: 144 },
-        { id: 'DB', name: '상단 우측', grade: 'A', r: 13, c: 22, ri: 318, ro: 368, a1: 36, a2: 88 }
-      ]
-    ]
-  },
+
+  /* 부채꼴 홀 — 무대 정면으로만 객석이 펼쳐지고 2·3층은 뒤쪽 발코니 */
   hall: {
     name: '예술의전당 콘서트홀',
     label: '콘서트홀',
-    desc: '중소형 공연장. 좌석이 적어 경쟁이 가장 치열합니다.',
-    map: { viewBox: '0 0 600 400', cx: 300, cy: 58, stage: { x: 240, y: 12, w: 120, h: 28 } },
+    desc: '정면 부채꼴 객석에 뒤쪽 발코니와 측면 박스석. 좌석이 적어 경쟁이 가장 치열합니다.',
+    map: { viewBox: '0 0 600 400', cx: 300, cy: 58, stage: { x: 235, y: 14, w: 130, h: 30 } },
     rows: [
       [
-        { id: 'P1', name: '1층 좌측', grade: 'R',   r: 14, c: 10, ri: 55,  ro: 185, a1: 105, a2: 132 },
-        { id: 'P2', name: '1층 중앙', grade: 'VIP', r: 14, c: 16, ri: 55,  ro: 185, a1: 76,  a2: 104 },
-        { id: 'P3', name: '1층 우측', grade: 'R',   r: 14, c: 10, ri: 55,  ro: 185, a1: 48,  a2: 75 }
+        { id: 'P1', name: '1층 좌측', grade: 'R',   r: 14, c: 10, shape: { t: 'arc', ri: 62, ro: 190, a1: 104, a2: 128 } },
+        { id: 'P2', name: '1층 중앙', grade: 'VIP', r: 14, c: 16, shape: { t: 'arc', ri: 62, ro: 190, a1: 78,  a2: 102 } },
+        { id: 'P3', name: '1층 우측', grade: 'R',   r: 14, c: 10, shape: { t: 'arc', ri: 62, ro: 190, a1: 52,  a2: 76 } }
       ],
       [
-        { id: 'B1', name: '2층 좌측', grade: 'S', r: 8, c: 10, ri: 195, ro: 262, a1: 105, a2: 132 },
-        { id: 'B2', name: '2층 중앙', grade: 'R', r: 8, c: 16, ri: 195, ro: 262, a1: 76,  a2: 104 },
-        { id: 'B3', name: '2층 우측', grade: 'S', r: 8, c: 10, ri: 195, ro: 262, a1: 48,  a2: 75 }
+        { id: 'X1', name: '좌측 박스', grade: 'S', r: 6, c: 8, shape: { t: 'arc', ri: 85, ro: 195, a1: 131, a2: 152 } },
+        { id: 'X2', name: '우측 박스', grade: 'S', r: 6, c: 8, shape: { t: 'arc', ri: 85, ro: 195, a1: 28,  a2: 49 } }
       ],
       [
-        { id: 'C1', name: '3층 중앙', grade: 'A', r: 10, c: 20, ri: 272, ro: 320, a1: 62, a2: 118 }
+        { id: 'B1', name: '2층 좌측', grade: 'S', r: 8, c: 10, shape: { t: 'arc', ri: 200, ro: 250, a1: 104, a2: 128 } },
+        { id: 'B2', name: '2층 중앙', grade: 'R', r: 8, c: 16, shape: { t: 'arc', ri: 200, ro: 250, a1: 78,  a2: 102 } },
+        { id: 'B3', name: '2층 우측', grade: 'S', r: 8, c: 10, shape: { t: 'arc', ri: 200, ro: 250, a1: 52,  a2: 76 } }
+      ],
+      [
+        { id: 'C1', name: '3층 중앙', grade: 'A', r: 10, c: 20, shape: { t: 'arc', ri: 258, ro: 300, a1: 66, a2: 114 } }
       ]
     ]
   },
+
+  /* 원형 실내체육관 — 사각 플로어를 객석이 거의 한 바퀴 감싼다 */
+  gym: {
+    name: '잠실실내체육관',
+    label: '실내체육관',
+    desc: '사각 플로어를 1·2층이 둥글게 감싸는 중형 경기장. 무대와 가까워 시야가 고른 편입니다.',
+    map: { viewBox: '0 0 600 440', cx: 300, cy: 140, stage: { x: 230, y: 20, w: 140, h: 30 } },
+    rows: [
+      [
+        { id: 'GA', name: '플로어 A', grade: 'VIP', r: 9, c: 13, shape: { t: 'rect', x: 195, y: 70, w: 66, h: 115 } },
+        { id: 'GB', name: '플로어 B', grade: 'VIP', r: 9, c: 13, shape: { t: 'rect', x: 267, y: 70, w: 66, h: 115 } },
+        { id: 'GC', name: '플로어 C', grade: 'VIP', r: 9, c: 13, shape: { t: 'rect', x: 339, y: 70, w: 66, h: 115 } }
+      ],
+      [
+        { id: 'G1', name: '1층 A구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: 143, a2: 192 } },
+        { id: 'G2', name: '1층 B구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: 92,  a2: 141 } },
+        { id: 'G3', name: '1층 C구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: 39,  a2: 88 } },
+        { id: 'G4', name: '1층 D구역', grade: 'R', r: 11, c: 15, shape: { t: 'arc', ri: 155, ro: 200, a1: -12, a2: 37 } }
+      ],
+      [
+        { id: 'G5', name: '2층 A구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: 143, a2: 192 } },
+        { id: 'G6', name: '2층 B구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: 92,  a2: 141 } },
+        { id: 'G7', name: '2층 C구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: 39,  a2: 88 } },
+        { id: 'G8', name: '2층 D구역', grade: 'S', r: 12, c: 16, shape: { t: 'arc', ri: 208, ro: 245, a1: -12, a2: 37 } }
+      ],
+      [
+        { id: 'G9', name: '3층 좌측', grade: 'A', r: 10, c: 18, shape: { t: 'arc', ri: 253, ro: 285, a1: 92, a2: 160 } },
+        { id: 'GX', name: '3층 우측', grade: 'A', r: 10, c: 18, shape: { t: 'arc', ri: 253, ro: 285, a1: 20, a2: 88 } }
+      ]
+    ]
+  },
+
+  /* 신축 대형 아레나 — 플로어 + 100/200/300번대 말발굽형 */
+  inspire: {
+    name: '인스파이어 아레나 (영종도)',
+    label: '아레나',
+    desc: '국내 최초 대형 공연 전용 아레나. 플로어를 100·200·300번대가 말발굽으로 감쌉니다.',
+    map: { viewBox: '0 0 600 450', cx: 300, cy: 140, stage: { x: 215, y: 24, w: 170, h: 34 } },
+    rows: [
+      [
+        { id: 'IA', name: '플로어 A', grade: 'VIP', r: 10, c: 15, shape: { t: 'rect', x: 180, y: 78, w: 78, h: 117 } },
+        { id: 'IB', name: '플로어 B', grade: 'VIP', r: 10, c: 15, shape: { t: 'rect', x: 261, y: 78, w: 78, h: 117 } },
+        { id: 'IC', name: '플로어 C', grade: 'VIP', r: 10, c: 15, shape: { t: 'rect', x: 342, y: 78, w: 78, h: 117 } }
+      ],
+      [
+        { id: 'I1', name: '101구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: 144, a2: 194 } },
+        { id: 'I2', name: '102구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: 92,  a2: 142 } },
+        { id: 'I3', name: '103구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: 38,  a2: 88 } },
+        { id: 'I4', name: '104구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 170, ro: 215, a1: -14, a2: 36 } }
+      ],
+      [
+        { id: 'I5', name: '201구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: 144, a2: 194 } },
+        { id: 'I6', name: '202구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: 92,  a2: 142 } },
+        { id: 'I7', name: '203구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: 38,  a2: 88 } },
+        { id: 'I8', name: '204구역', grade: 'S', r: 13, c: 18, shape: { t: 'arc', ri: 223, ro: 262, a1: -14, a2: 36 } }
+      ],
+      [
+        { id: 'I9', name: '301구역', grade: 'A', r: 11, c: 20, shape: { t: 'arc', ri: 270, ro: 300, a1: 92, a2: 160 } },
+        { id: 'IX', name: '302구역', grade: 'A', r: 11, c: 20, shape: { t: 'arc', ri: 270, ro: 300, a1: 20, a2: 88 } }
+      ]
+    ]
+  },
+
+  /* 체조경기장 — 원형에 가까워 객석이 무대 옆까지 크게 감싼다 */
+  arena: {
+    name: 'KSPO DOME (체조경기장)',
+    label: '체조경기장',
+    desc: '국내 콘서트의 기준이 되는 공연장. 플로어와 3개 층이 원형으로 둘러쌉니다.',
+    map: { viewBox: '0 0 600 460', cx: 300, cy: 148, stage: { x: 220, y: 22, w: 160, h: 32 } },
+    rows: [
+      [
+        { id: 'FA', name: '플로어 A', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 185, y: 74, w: 74, h: 131 } },
+        { id: 'FB', name: '플로어 B', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 263, y: 74, w: 74, h: 131 } },
+        { id: 'FC', name: '플로어 C', grade: 'VIP', r: 10, c: 14, shape: { t: 'rect', x: 341, y: 74, w: 74, h: 131 } }
+      ],
+      [
+        { id: 'Z1', name: '1층 1구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: 144, a2: 196 } },
+        { id: 'Z2', name: '1층 2구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: 90,  a2: 142 } },
+        { id: 'Z3', name: '1층 3구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: 36,  a2: 88 } },
+        { id: 'Z4', name: '1층 4구역', grade: 'R', r: 12, c: 16, shape: { t: 'arc', ri: 165, ro: 210, a1: -18, a2: 34 } }
+      ],
+      [
+        { id: 'Z5', name: '2층 5구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: 144, a2: 196 } },
+        { id: 'Z6', name: '2층 6구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: 90,  a2: 142 } },
+        { id: 'Z7', name: '2층 7구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: 36,  a2: 88 } },
+        { id: 'Z8', name: '2층 8구역', grade: 'S', r: 14, c: 17, shape: { t: 'arc', ri: 218, ro: 262, a1: -18, a2: 34 } }
+      ],
+      [
+        { id: 'Z9', name: '3층 좌측', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 270, ro: 310, a1: 112, a2: 160 } },
+        { id: 'ZA', name: '3층 중앙', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 270, ro: 310, a1: 66,  a2: 110 } },
+        { id: 'ZB', name: '3층 우측', grade: 'A', r: 12, c: 18, shape: { t: 'arc', ri: 270, ro: 310, a1: 20,  a2: 64 } }
+      ]
+    ]
+  },
+
+  /* 야구 돔 — 무대를 홈플레이트 쪽에 두고 내야·외야·상단이 부채꼴로 퍼진다 */
+  dome: {
+    name: '고척스카이돔',
+    label: '돔구장',
+    desc: '국내 최대 실내 돔. 그라운드 뒤로 내야·외야·상단석이 넓게 퍼집니다.',
+    map: { viewBox: '0 0 600 470', cx: 300, cy: 152, stage: { x: 225, y: 20, w: 150, h: 32 } },
+    rows: [
+      [
+        { id: 'D1', name: '그라운드 A', grade: 'VIP', r: 11, c: 16, shape: { t: 'rect', x: 180, y: 72, w: 78, h: 138 } },
+        { id: 'D2', name: '그라운드 B', grade: 'VIP', r: 11, c: 16, shape: { t: 'rect', x: 261, y: 72, w: 78, h: 138 } },
+        { id: 'D3', name: '그라운드 C', grade: 'VIP', r: 11, c: 16, shape: { t: 'rect', x: 342, y: 72, w: 78, h: 138 } }
+      ],
+      [
+        { id: 'D4', name: '내야 3루', grade: 'R', r: 13, c: 19, shape: { t: 'arc', ri: 170, ro: 218, a1: 122, a2: 180 } },
+        { id: 'D5', name: '내야 중앙', grade: 'R', r: 13, c: 19, shape: { t: 'arc', ri: 170, ro: 218, a1: 61,  a2: 119 } },
+        { id: 'D6', name: '내야 1루', grade: 'R', r: 13, c: 19, shape: { t: 'arc', ri: 170, ro: 218, a1: 0,   a2: 58 } }
+      ],
+      [
+        { id: 'D7', name: '외야 좌측', grade: 'S', r: 15, c: 21, shape: { t: 'arc', ri: 226, ro: 268, a1: 122, a2: 180 } },
+        { id: 'D8', name: '외야 중앙', grade: 'S', r: 15, c: 21, shape: { t: 'arc', ri: 226, ro: 268, a1: 61,  a2: 119 } },
+        { id: 'D9', name: '외야 우측', grade: 'S', r: 15, c: 21, shape: { t: 'arc', ri: 226, ro: 268, a1: 0,   a2: 58 } }
+      ],
+      [
+        { id: 'DA', name: '상단 좌측', grade: 'A', r: 13, c: 22, shape: { t: 'arc', ri: 276, ro: 310, a1: 91, a2: 162 } },
+        { id: 'DB', name: '상단 우측', grade: 'A', r: 13, c: 22, shape: { t: 'arc', ri: 276, ro: 310, a1: 18, a2: 89 } }
+      ]
+    ]
+  },
+
+  /* 야외 주경기장 — 둥글게 감싸지 않는다. 사각 그라운드에 스탠드가 마주보는 구조 */
   stadium: {
     name: '서울월드컵경기장',
     label: '주경기장',
-    desc: '최대 규모 야외 경기장. 스탠딩과 스탠드석이 넓게 펼쳐집니다.',
-    map: { viewBox: '0 0 600 420', cx: 300, cy: 56, stage: { x: 235, y: 12, w: 130, h: 28 } },
+    desc: '최대 규모 야외 경기장. 사각 그라운드를 스탠드가 마주보며 둘러쌉니다.',
+    map: { viewBox: '0 0 600 480', cx: 300, cy: 250, stage: { x: 205, y: 24, w: 190, h: 38 } },
     rows: [
       [
-        { id: 'SA', name: '스탠딩 A', grade: 'VIP', r: 12, c: 20, ri: 52,  ro: 142, a1: 92,  a2: 150 },
-        { id: 'SB', name: '스탠딩 B', grade: 'VIP', r: 12, c: 20, ri: 52,  ro: 142, a1: 30,  a2: 88 }
+        { id: 'SA', name: '스탠딩 A', grade: 'VIP', r: 12, c: 18, shape: { t: 'rect', x: 168, y: 82, w: 125, h: 150 } },
+        { id: 'SB', name: '스탠딩 B', grade: 'VIP', r: 12, c: 18, shape: { t: 'rect', x: 300, y: 82, w: 125, h: 150 } }
       ],
       [
-        { id: 'N1', name: 'N석 1구역', grade: 'R', r: 16, c: 20, ri: 150, ro: 215, a1: 112, a2: 150 },
-        { id: 'N2', name: 'N석 2구역', grade: 'R', r: 16, c: 22, ri: 150, ro: 215, a1: 68,  a2: 110 },
-        { id: 'N3', name: 'N석 3구역', grade: 'R', r: 16, c: 20, ri: 150, ro: 215, a1: 30,  a2: 66 }
+        { id: 'N1', name: '1층 좌측', grade: 'R', r: 16, c: 14, shape: { t: 'rect', x: 58,  y: 82,  w: 96,  h: 210 } },
+        { id: 'N2', name: '1층 중앙', grade: 'R', r: 12, c: 24, shape: { t: 'rect', x: 168, y: 242, w: 257, h: 70 } },
+        { id: 'N3', name: '1층 우측', grade: 'R', r: 16, c: 14, shape: { t: 'rect', x: 439, y: 82,  w: 96,  h: 210 } }
       ],
       [
-        { id: 'E1', name: 'E석 1구역', grade: 'S', r: 18, c: 22, ri: 223, ro: 282, a1: 112, a2: 150 },
-        { id: 'E2', name: 'E석 2구역', grade: 'S', r: 18, c: 22, ri: 223, ro: 282, a1: 68,  a2: 110 },
-        { id: 'E3', name: 'E석 3구역', grade: 'S', r: 18, c: 22, ri: 223, ro: 282, a1: 30,  a2: 66 }
+        { id: 'E1', name: '2층 좌측', grade: 'S', r: 14, c: 20, shape: { t: 'rect', x: 58,  y: 322, w: 150, h: 70 } },
+        { id: 'E2', name: '2층 중앙', grade: 'S', r: 14, c: 22, shape: { t: 'rect', x: 216, y: 322, w: 168, h: 70 } },
+        { id: 'E3', name: '2층 우측', grade: 'S', r: 14, c: 20, shape: { t: 'rect', x: 392, y: 322, w: 150, h: 70 } }
       ],
       [
-        { id: 'W1', name: 'W석 1구역', grade: 'A', r: 16, c: 24, ri: 290, ro: 340, a1: 92, a2: 150 },
-        { id: 'W2', name: 'W석 2구역', grade: 'A', r: 16, c: 24, ri: 290, ro: 340, a1: 30, a2: 88 }
+        { id: 'W1', name: '3층 좌측', grade: 'A', r: 14, c: 24, shape: { t: 'rect', x: 110, y: 402, w: 180, h: 58 } },
+        { id: 'W2', name: '3층 우측', grade: 'A', r: 14, c: 24, shape: { t: 'rect', x: 310, y: 402, w: 180, h: 58 } }
       ]
     ]
   }
 };
 
 /** 홈 화면 공연장 선택 순서 (작은 곳 → 큰 곳) */
-TP.VENUE_LIST = ['hall', 'gym', 'arena', 'dome', 'stadium'];
+TP.VENUE_LIST = ['hall', 'gym', 'inspire', 'arena', 'dome', 'stadium'];
 
 /** 현재 설정의 공연장. 직접 고른 값이 없으면 공연의 기본 공연장을 쓴다. */
 TP.venueOf = function (cfg) {

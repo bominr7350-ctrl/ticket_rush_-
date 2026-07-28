@@ -87,6 +87,24 @@ const ui = TP.ui = {
     return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
   },
 
+  /** 구역 모양 → SVG path. 공연장마다 구조가 달라 세 가지를 섞어 쓴다. */
+  _shapePath(g, s) {
+    if (s.t === 'rect') return `M${s.x} ${s.y} h${s.w} v${s.h} h${-s.w} Z`;
+    if (s.t === 'poly') return 'M' + s.pts.trim().split(/\s+/).join(' L') + ' Z';
+    return ui._sector(g.cx, g.cy, s.ri, s.ro, s.a1, s.a2);
+  },
+
+  /** 라벨을 놓을 구역 중심 */
+  _shapeCenter(g, s) {
+    if (s.t === 'rect') return [s.x + s.w / 2, s.y + s.h / 2];
+    if (s.t === 'poly') {
+      const pts = s.pts.trim().split(/\s+/).map(q => q.split(',').map(Number));
+      return [pts.reduce((a, p) => a + p[0], 0) / pts.length,
+              pts.reduce((a, p) => a + p[1], 0) / pts.length];
+    }
+    return ui._polar(g.cx, g.cy, (s.ri + s.ro) / 2, (s.a1 + s.a2) / 2);
+  },
+
   /** 도넛 조각(구역) 경로 */
   _sector(cx, cy, ri, ro, a1, a2) {
     const p = ui._polar;
@@ -138,13 +156,13 @@ const ui = TP.ui = {
           class: 'vm-zone', 'data-zone': z.id, tabindex: '0', role: 'button'
         });
         const path = svgEl('path', {
-          d: ui._sector(g.cx, g.cy, tpl.ri, tpl.ro, tpl.a1, tpl.a2),
+          d: ui._shapePath(g, tpl.shape),
           class: 'vm-shape', fill: color, stroke: color, 'fill-opacity': '0.4'
         });
         node.appendChild(path);
 
         // 라벨은 구역 중앙에 수평으로 놓아야 읽힌다
-        const [lx, ly] = ui._polar(g.cx, g.cy, (tpl.ri + tpl.ro) / 2, (tpl.a1 + tpl.a2) / 2);
+        const [lx, ly] = ui._shapeCenter(g, tpl.shape);
         const name = svgEl('text', {
           x: lx.toFixed(1), y: (ly - 6).toFixed(1), class: 'vm-name',
           'text-anchor': 'middle', 'dominant-baseline': 'central'
