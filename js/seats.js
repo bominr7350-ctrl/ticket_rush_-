@@ -11,7 +11,7 @@
 (function (TP) {
 
 TP.SeatMap = function (cfg, rng) {
-  const venue = TP.VENUES[cfg.concert.venue];
+  const venue = TP.venueOf(cfg);
   const d = cfg.difficulty;
 
   /* ─────────── 배치 생성 ─────────── */

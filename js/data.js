@@ -23,6 +23,8 @@ TP.GRADES = {
 TP.VENUES = {
   arena: {
     name: 'KSPO DOME (체조경기장)',
+    label: '체조경기장',
+    desc: '국내 콘서트의 기준이 되는 공연장. 플로어와 3개 층으로 구성됩니다.',
     map: { viewBox: '0 0 600 440', cx: 300, cy: 62, stage: { x: 225, y: 14, w: 150, h: 30 } },
     rows: [
       [
@@ -46,8 +48,64 @@ TP.VENUES = {
       ]
     ]
   },
+  gym: {
+    name: '잠실실내체육관',
+    label: '실내체육관',
+    desc: '중형 원형 경기장. 무대와 가깝고 층이 낮아 시야가 고른 편입니다.',
+    map: { viewBox: '0 0 600 420', cx: 300, cy: 58, stage: { x: 230, y: 12, w: 140, h: 28 } },
+    rows: [
+      [
+        { id: 'GA', name: '플로어 A', grade: 'VIP', r: 9, c: 14, ri: 55,  ro: 150, a1: 108, a2: 148 },
+        { id: 'GB', name: '플로어 B', grade: 'VIP', r: 9, c: 14, ri: 55,  ro: 150, a1: 74,  a2: 106 },
+        { id: 'GC', name: '플로어 C', grade: 'VIP', r: 9, c: 14, ri: 55,  ro: 150, a1: 32,  a2: 72 }
+      ],
+      [
+        { id: 'G1', name: '1층 A구역', grade: 'R', r: 11, c: 16, ri: 158, ro: 228, a1: 106, a2: 148 },
+        { id: 'G2', name: '1층 B구역', grade: 'R', r: 11, c: 18, ri: 158, ro: 228, a1: 68,  a2: 104 },
+        { id: 'G3', name: '1층 C구역', grade: 'R', r: 11, c: 16, ri: 158, ro: 228, a1: 32,  a2: 66 }
+      ],
+      [
+        { id: 'G4', name: '2층 A구역', grade: 'S', r: 12, c: 16, ri: 236, ro: 300, a1: 106, a2: 148 },
+        { id: 'G5', name: '2층 B구역', grade: 'S', r: 12, c: 18, ri: 236, ro: 300, a1: 68,  a2: 104 },
+        { id: 'G6', name: '2층 C구역', grade: 'S', r: 12, c: 16, ri: 236, ro: 300, a1: 32,  a2: 66 }
+      ],
+      [
+        { id: 'G7', name: '3층 A구역', grade: 'A', r: 10, c: 18, ri: 308, ro: 352, a1: 90, a2: 148 },
+        { id: 'G8', name: '3층 B구역', grade: 'A', r: 10, c: 18, ri: 308, ro: 352, a1: 32, a2: 88 }
+      ]
+    ]
+  },
+  dome: {
+    name: '고척스카이돔',
+    label: '돔구장',
+    desc: '국내 최대 규모 실내 돔. 좌석은 많지만 그만큼 사람도 몰립니다.',
+    map: { viewBox: '0 0 600 440', cx: 300, cy: 60, stage: { x: 225, y: 14, w: 150, h: 30 } },
+    rows: [
+      [
+        { id: 'D1', name: '그라운드 A', grade: 'VIP', r: 11, c: 16, ri: 56,  ro: 150, a1: 108, a2: 144 },
+        { id: 'D2', name: '그라운드 B', grade: 'VIP', r: 11, c: 16, ri: 56,  ro: 150, a1: 72,  a2: 106 },
+        { id: 'D3', name: '그라운드 C', grade: 'VIP', r: 11, c: 16, ri: 56,  ro: 150, a1: 36,  a2: 70 }
+      ],
+      [
+        { id: 'D4', name: '내야 1루',  grade: 'R', r: 13, c: 18, ri: 158, ro: 232, a1: 108, a2: 144 },
+        { id: 'D5', name: '내야 중앙', grade: 'R', r: 13, c: 20, ri: 158, ro: 232, a1: 72,  a2: 106 },
+        { id: 'D6', name: '내야 3루',  grade: 'R', r: 13, c: 18, ri: 158, ro: 232, a1: 36,  a2: 70 }
+      ],
+      [
+        { id: 'D7', name: '외야 좌측', grade: 'S', r: 15, c: 20, ri: 240, ro: 310, a1: 108, a2: 144 },
+        { id: 'D8', name: '외야 중앙', grade: 'S', r: 15, c: 22, ri: 240, ro: 310, a1: 72,  a2: 106 },
+        { id: 'D9', name: '외야 우측', grade: 'S', r: 15, c: 20, ri: 240, ro: 310, a1: 36,  a2: 70 }
+      ],
+      [
+        { id: 'DA', name: '상단 좌측', grade: 'A', r: 13, c: 22, ri: 318, ro: 368, a1: 92, a2: 144 },
+        { id: 'DB', name: '상단 우측', grade: 'A', r: 13, c: 22, ri: 318, ro: 368, a1: 36, a2: 88 }
+      ]
+    ]
+  },
   hall: {
     name: '예술의전당 콘서트홀',
+    label: '콘서트홀',
+    desc: '중소형 공연장. 좌석이 적어 경쟁이 가장 치열합니다.',
     map: { viewBox: '0 0 600 400', cx: 300, cy: 58, stage: { x: 240, y: 12, w: 120, h: 28 } },
     rows: [
       [
@@ -67,6 +125,8 @@ TP.VENUES = {
   },
   stadium: {
     name: '서울월드컵경기장',
+    label: '주경기장',
+    desc: '최대 규모 야외 경기장. 스탠딩과 스탠드석이 넓게 펼쳐집니다.',
     map: { viewBox: '0 0 600 420', cx: 300, cy: 56, stage: { x: 235, y: 12, w: 130, h: 28 } },
     rows: [
       [
@@ -89,6 +149,14 @@ TP.VENUES = {
       ]
     ]
   }
+};
+
+/** 홈 화면 공연장 선택 순서 (작은 곳 → 큰 곳) */
+TP.VENUE_LIST = ['hall', 'gym', 'arena', 'dome', 'stadium'];
+
+/** 현재 설정의 공연장. 직접 고른 값이 없으면 공연의 기본 공연장을 쓴다. */
+TP.venueOf = function (cfg) {
+  return TP.VENUES[cfg.venue] || TP.VENUES[cfg.concert.venue];
 };
 
 /* ─────────── 공연 목록 ───────────

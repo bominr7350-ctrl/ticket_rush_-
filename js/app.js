@@ -10,6 +10,7 @@ const TICK = 100;                 // 시뮬레이션 틱 (ms)
 const App = {
   cfg: {
     concert: TP.CONCERTS[0],
+    venue: TP.CONCERTS[0].venue,   // 홈에서 직접 고른다. 공연을 바꾸면 그 공연의 기본값으로 따라간다
     difficulty: TP.DIFFS[1],
     target: 'any',
     round: null,                  // 선택한 회차 (대기열 통과 후 결정)
@@ -41,7 +42,8 @@ const App = {
       el.appendChild(u.el('div.c-art', { text: c.emoji, style: `background:${c.art}` }));
       const body = u.el('div.c-body');
       body.appendChild(u.el('div.c-name', { text: c.name }));
-      body.appendChild(u.el('div.c-venue', { text: `${c.artist} · ${TP.VENUES[c.venue].name}` }));
+      // 공연장은 아래에서 따로 고르므로 여기서는 표기하지 않는다 (덮어쓰면 서로 어긋난다)
+      body.appendChild(u.el('div.c-venue', { text: c.artist }));
       body.appendChild(u.el('div.c-venue', { text: c.date }));
       const tags = u.el('div.c-tags');
       c.tags.forEach(t => tags.appendChild(u.el('span.c-tag' + (t === 'HOT' ? '.hot' : ''), { text: t })));
@@ -49,11 +51,36 @@ const App = {
       el.appendChild(body);
       el.addEventListener('click', () => {
         this.cfg.concert = c;
+        // 공연을 바꾸면 공연장도 그 공연의 기본 공연장으로 따라간다 (원하면 아래에서 다시 고를 수 있다)
+        this.cfg.venue = c.venue;
         u.$$('.concert').forEach(x => x.classList.toggle('on', x.dataset.id === c.id));
+        this.paintVenues();
       });
       cg.appendChild(el);
     });
     cg.firstChild.classList.add('on');
+
+    // 공연장
+    const vg = $('#venue-grid');
+    vg.textContent = '';
+    TP.VENUE_LIST.forEach(key => {
+      const v = TP.VENUES[key];
+      let seats = 0;
+      v.rows.forEach(row => row.forEach(z => { seats += z.r * z.c; }));
+      const el = u.el('button.venue-pick', { type: 'button', 'data-venue': key });
+      el.appendChild(u.el('div.vp-label', { text: v.label }));
+      el.appendChild(u.el('div.vp-name', { text: v.name }));
+      el.appendChild(u.el('div.vp-desc', { text: v.desc }));
+      el.appendChild(u.el('div.vp-spec', {
+        text: `${v.rows.length}개 층 · ${v.rows.reduce((a, r) => a + r.length, 0)}개 구역`
+      }));
+      el.addEventListener('click', () => {
+        this.cfg.venue = key;
+        this.paintVenues();
+      });
+      vg.appendChild(el);
+    });
+    this.paintVenues();
 
     // 난이도
     const dg = $('#diff-grid');
@@ -90,6 +117,10 @@ const App = {
     tg.firstChild.classList.add('on');
 
     this.renderRecords();
+  },
+
+  paintVenues() {
+    u.$$('.venue-pick').forEach(x => x.classList.toggle('on', x.dataset.venue === this.cfg.venue));
   },
 
   renderRecords() {
@@ -192,6 +223,8 @@ const App = {
     this.curZone = null;
     // 회차를 고르기 전에는 경쟁률 배수가 중립(1)이다
     this.roundHeat = 1;
+    // 대기번호를 받기 전에는 대기열 압박도 중립(1)
+    this.queueHeat = 1;
     this._selDate = null;
 
     // 이전 연습에서 남은 진행 플래그 초기화
@@ -237,8 +270,8 @@ const App = {
     if (p !== 'standby') {
       this.elapsed += dt;
       this.server.tick(dt);
-      // 인기 회차를 고르면 같은 시간에 더 많이 팔려 있다
-      this.map.advance(this.elapsed * this.roundHeat, dt);
+      // 인기 회차를 고르거나 대기번호가 뒤쪽이면 같은 시간에 더 많이 팔려 있다
+      this.map.advance(this.elapsed * this.roundHeat * this.queueHeat, dt);
       this.run.peakLoad = Math.max(this.run.peakLoad, this.server.load);
     }
 
@@ -326,7 +359,7 @@ const App = {
     $('#sb-poster').textContent = c.emoji;
     $('#sb-title').textContent = c.name;
     $('#sb-meta').innerHTML =
-      `${c.artist} · ${TP.VENUES[c.venue].name}<br>${c.date}<br>` +
+      `${c.artist} · ${TP.venueOf(this.cfg).name}<br>${c.date}<br>` +
       `<span style="color:#6f7b90">난이도 ${d.name} · 예상 동시접속 ${u.n(d.users)}명 · 총 ${u.n(this.map.total)}석</span>`;
 
     const btn = $('#btn-book');
@@ -399,10 +432,25 @@ const App = {
   enterQueue(reaction) {
     const ahead = this.queue.init(reaction);
     this.run.aheadStart = ahead;
+
+    /* 대기번호가 좌석 소진 속도를 직접 끌어올린다.
+       내 앞의 사람들이 지금 좌석을 가져가는 중이므로, 좌석 수 대비 앞사람이
+       많을수록 내가 들어갔을 때 남아 있을 자리가 급격히 줄어든다.
+       (제곱근을 쓰는 이유 — 선형이면 높은 난이도에서 항상 전석 매진이 된다) */
+    const perSeat = ahead / Math.max(this.map.total, 1);
+    this.queueHeat = 1 + Math.min(1.5, Math.sqrt(perSeat) * 0.8);
+    this.run.queueHeat = this.queueHeat;
+    this.run.aheadPerSeat = perSeat;
+
     this.phase = 'queue';
     ui.show('queue');
     T.mark('queueIn');
-    T.log(`대기열 진입 — 내 앞 ${u.n(ahead)}명`, 'info');
+    T.log(`대기열 진입 — 내 앞 ${u.n(ahead)}명 (좌석 1석당 ${perSeat.toFixed(1)}명 경쟁)`,
+      perSeat > 1 ? 'bad' : 'info');
+
+    const press = $('#q-press');
+    press.textContent = '1석당 ' + perSeat.toFixed(1) + '명';
+    press.style.color = perSeat > 1.5 ? 'var(--accent)' : perSeat > 0.6 ? 'var(--amber)' : 'var(--green)';
     this.paintQueue();
 
     $('#btn-refresh').onclick = () => this.doRefresh();
@@ -610,7 +658,7 @@ const App = {
       실제로 선택했을 때 적용되는 소진 곡선과 같은 식이라 표시와 결과가 어긋나지 않는다. */
   estLeft(round) {
     const d = this.cfg.difficulty;
-    const frac = 1 - Math.exp(-4.2 * this.elapsed * round.heat / d.selloutSec);
+    const frac = 1 - Math.exp(-4.2 * this.elapsed * round.heat * this.queueHeat / d.selloutSec);
     // 실제 남은 재고보다 많이 표시하지 않는다 — 경쟁률이 낮은 회차라도
     // 이미 팔려나간 좌석이 되살아나지는 않는다
     return Math.min(this.map.available(), Math.max(0, Math.round(this.map.total * (1 - frac))));
@@ -689,7 +737,7 @@ const App = {
       box.appendChild(u.el('p.empty', { text: '회차를 선택해 주세요.' }));
     } else {
       [['공연', cfg.concert.name],
-       ['장소', TP.VENUES[cfg.concert.venue].name],
+       ['장소', TP.venueOf(cfg).name],
        ['일시', this.roundLabel()],
        ['매수', cfg.qty + '매'],
        ['잔여', u.n(this.estLeft(cfg.round)) + '석']
@@ -738,7 +786,7 @@ const App = {
     const c = this.cfg.concert;
     $('#zone-title').textContent = c.name;
     $('#zone-sub').textContent =
-      `${TP.VENUES[c.venue].name} · ${this.roundLabel()} · ${this.cfg.qty}매 · 원하는 구역을 선택하세요`;
+      `${TP.venueOf(this.cfg).name} · ${this.roundLabel()} · ${this.cfg.qty}매 · 원하는 구역을 선택하세요`;
     ui.renderVenue(this.map, this.cfg, id => this.pickZone(id));
     ui.updateVenue(this.map);
   },
@@ -868,7 +916,7 @@ const App = {
     $('#co-info').innerHTML = [
       ['공연명', c.name],
       ['일시', this.roundLabel()],
-      ['장소', TP.VENUES[c.venue].name],
+      ['장소', TP.venueOf(this.cfg).name],
       ['좌석', mine.map(s => `${s.zoneName} ${s.label}`).join(', ')],
       ['매수', `${mine.length}매`]
     ].map(([k, v]) => `<div class="co-row"><span>${k}</span><b>${v}</b></div>`).join('');
@@ -1142,6 +1190,7 @@ const App = {
         <div class="rec-grid">
           <div class="rec-item"><div class="rec-val">${u.ms(run.reactionMs)}</div><div class="rec-lab">반응속도</div></div>
           <div class="rec-item"><div class="rec-val">${u.n(run.aheadStart)}</div><div class="rec-lab">대기 순번</div></div>
+          <div class="rec-item"><div class="rec-val">${run.aheadPerSeat == null ? '—' : run.aheadPerSeat.toFixed(1)}</div><div class="rec-lab">좌석당 경쟁자</div></div>
           <div class="rec-item"><div class="rec-val">${Math.round(run.soldAtEntry * 100)}%</div><div class="rec-lab">진입 시 판매율</div></div>
           <div class="rec-item"><div class="rec-val">${run.seatCount}매</div><div class="rec-lab">확보 좌석</div></div>
           <div class="rec-item"><div class="rec-val">${u.dur(secs)}</div><div class="rec-lab">총 소요시간</div></div>

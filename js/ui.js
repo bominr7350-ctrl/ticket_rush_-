@@ -111,7 +111,7 @@ const ui = TP.ui = {
     const wrap = $('#venue');
     wrap.textContent = '';
 
-    const venue = TP.VENUES[cfg.concert.venue];
+    const venue = TP.venueOf(cfg);
     const g = venue.map;
     const svg = svgEl('svg', { viewBox: g.viewBox, class: 'venue-svg' });
 
