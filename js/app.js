@@ -204,7 +204,9 @@ const App = {
       item.addEventListener('click', () => {
         setOpen(false);
         if (!this.leaveGuard()) return;
-        if (item.dataset.go === 'drill') TP.Drill.open();
+        const go = item.dataset.go;
+        if (go === 'drill') TP.Drill.open();
+        else if (go === 'chat') TP.Chat.open();
         else this.goHome();
       });
     });
@@ -223,10 +225,11 @@ const App = {
 
   /** 지금 어느 모드에 있는지 표시. 화면 상태에서 직접 읽어 모듈 간 상태 공유를 피한다 */
   paintMenu() {
-    const onDrill = !!document.querySelector(
-      '#screen-cd-setup.active, #screen-cd-run.active, #screen-cd-result.active');
-    u.$$('.menu-item').forEach(i =>
-      i.classList.toggle('on', (i.dataset.go === 'drill') === onDrill));
+    const q = (sel) => !!document.querySelector(sel);
+    const active =
+      q('#screen-cd-setup.active, #screen-cd-run.active, #screen-cd-result.active') ? 'drill' :
+      q('#screen-chat.active') ? 'chat' : 'home';
+    u.$$('.menu-item').forEach(i => i.classList.toggle('on', i.dataset.go === active));
   },
 
   /** 연습 중이면 확인을 받고 정리한다 */
@@ -250,6 +253,7 @@ const App = {
 
   goHome() {
     if (TP.Drill) TP.Drill.stop();
+    if (TP.Chat) TP.Chat.stop();      // 채팅 폴링을 멈춰야 홈에서 계속 요청하지 않는다
     this.renderRecords();
     ui.topbar(false);
     ui.show('home');

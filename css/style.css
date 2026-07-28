@@ -949,3 +949,99 @@ input{font-family:inherit}
   .drill-wrap{padding:18px 16px 60px}
   .dr-live{width:100%;justify-content:space-between}
 }
+
+/* ═══════════ 커뮤니티 · 채팅 ═══════════ */
+.chat-wrap{max-width:760px;margin:0 auto;padding:26px 24px 60px}
+.chat-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:8px}
+.chat-head h1{font-size:23px;letter-spacing:-.02em}
+.chat-head p{font-size:13px;color:var(--muted);margin-top:5px}
+.chat-me{text-align:right}
+.chat-me span{display:block;font-size:10.5px;color:var(--muted)}
+.chat-me b{font-size:14px}
+.chat-warn{
+  margin-top:12px;padding:11px 14px;border-radius:var(--radius-s);font-size:12px;line-height:1.6;
+  background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.32);color:#ffd27d;
+}
+
+/* 접속 설정 안내 */
+.chat-setup{
+  margin-top:18px;padding:22px;border-radius:var(--radius);
+  background:var(--surface);border:1px solid var(--border);
+}
+.chat-setup h2{font-size:17px}
+.cs-lead{font-size:13px;color:var(--text-2);line-height:1.7;margin-top:8px}
+.cs-steps{margin:18px 0 4px;padding-left:20px;font-size:13px;color:var(--text-2);line-height:1.75}
+.cs-steps li{margin-bottom:12px}
+.cs-steps b{color:var(--text)}
+.cs-hint{font-size:11.5px;color:var(--muted);line-height:1.6}
+.cs-hint b{color:#ffb3ba}
+.cs-sql{
+  margin-top:9px;padding:13px 14px;border-radius:var(--radius-s);
+  background:var(--bg-2);border:1px solid var(--border);
+  font-family:var(--mono);font-size:11px;line-height:1.65;color:var(--text-2);
+  white-space:pre;overflow-x:auto;
+}
+.cs-field{display:block;margin-top:13px}
+.cs-field span{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.cs-field input{
+  width:100%;padding:12px 14px;font-size:13px;font-family:var(--mono);
+  background:var(--bg-2);border:1.5px solid var(--border);border-radius:var(--radius-s);
+  color:var(--text);outline:none;transition:.16s;
+}
+.cs-field input:focus{border-color:var(--accent)}
+.chat-setup .btn-primary{width:100%;margin-top:16px}
+.cs-note{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:14px}
+
+/* 방 목록 */
+.chat-rooms{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px}
+.chat-room{
+  padding:8px 14px;border-radius:100px;font-size:12.5px;font-weight:600;
+  background:var(--surface);border:1px solid var(--border);color:var(--text-2);transition:.14s;
+}
+.chat-room:hover{border-color:var(--border-2);color:var(--text)}
+.chat-room.on{background:var(--accent-dim);border-color:var(--accent);color:#ffb3ba}
+.chat-room-desc{font-size:11.5px;color:var(--muted);margin-top:9px;min-height:17px}
+
+/* 대화 목록 */
+.chat-log{
+  margin-top:10px;height:min(52vh,440px);overflow-y:auto;
+  padding:14px;border-radius:var(--radius);
+  background:var(--bg-2);border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:10px;
+}
+.chat-empty{color:var(--muted);font-size:12.5px;margin:auto;text-align:center}
+.chat-msg{max-width:82%;align-self:flex-start}
+.chat-msg.mine{align-self:flex-end;text-align:right}
+.cm-head{display:flex;align-items:baseline;gap:7px;margin-bottom:4px}
+.chat-msg.mine .cm-head{justify-content:flex-end}
+.cm-head b{font-size:12px;font-weight:700;color:var(--text-2)}
+.chat-msg.mine .cm-head b{color:#ffb3ba}
+.cm-head span{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+.cm-body{
+  display:inline-block;text-align:left;padding:10px 13px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--border);
+  font-size:13px;line-height:1.6;word-break:break-word;white-space:pre-wrap;
+}
+.chat-msg.mine .cm-body{background:var(--accent-dim);border-color:rgba(255,71,87,.34)}
+
+.chat-status{min-height:18px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.chat-status.bad{color:var(--accent-2)}
+
+.chat-form{display:flex;gap:8px;margin-top:4px}
+.chat-form input{
+  flex:1;min-width:0;padding:13px 15px;font-size:13.5px;
+  background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-s);
+  color:var(--text);outline:none;transition:.16s;
+}
+.chat-form input:focus{border-color:var(--accent)}
+.chat-form .btn-primary{flex:0 0 auto;padding:13px 20px}
+.chat-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6;
+}
+
+@media(max-width:560px){
+  .chat-wrap{padding:18px 16px 50px}
+  .chat-msg{max-width:92%}
+  .chat-log{height:56vh}
+}
