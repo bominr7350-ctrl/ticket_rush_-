@@ -114,7 +114,7 @@
         <p>전체 연습에서는 보안문자가 한 판에 한 번만 나옵니다.
            이 구간만 5~30문제 연속으로 반복해서 문제당 속도와 정확도를 측정합니다.</p>
       </div>
-      <a href="captcha.html">보안문자 연습 →</a>
+      <button type="button" id="btn-go-drill">보안문자 연습 →</button>
     </div>
 
     <div class="home-record" id="home-record"></div>
@@ -324,6 +324,79 @@
     <div class="result-wrap" id="result-wrap"></div>
   </section>
 
+  <!-- ══════════ 보안문자 집중 연습 — 설정 ══════════ -->
+  <section id="screen-cd-setup" class="screen">
+    <div class="drill-wrap">
+      <button type="button" class="drill-back" id="btn-cd-home">← 전체 연습으로</button>
+
+      <div class="home-hero" style="padding:34px 0 26px">
+        <div class="hero-badge">보안문자 집중 연습</div>
+        <h1 class="hero-title">여기서 <em>3초</em>를 줄이면<br>좌석 하나가 남습니다.</h1>
+        <p class="hero-sub">
+          보안문자는 좌석을 보기도 전에 나옵니다. 여기서 흘린 시간만큼 좌석이 팔린 상태로 들어가게 됩니다.<br>
+          문자를 <b>외우지 말고 보면서 바로 타이핑</b>하는 감각만 반복해서 익히는 연습입니다.
+        </p>
+      </div>
+
+      <div class="panel-block">
+        <h2 class="block-title"><span class="num">01</span> 난이도</h2>
+        <div class="diff-grid" id="cd-lv-grid"></div>
+      </div>
+
+      <div class="panel-block">
+        <h2 class="block-title"><span class="num">02</span> 문제 수</h2>
+        <div class="qty-grid" id="cd-cnt-grid" style="max-width:340px"></div>
+      </div>
+
+      <button class="btn-primary btn-huge" id="btn-cd-start">연습 시작</button>
+      <p class="disclaimer">
+        여기서 만드는 보안문자는 이 페이지가 직접 그린 연습용 이미지입니다.
+        실제 예매처와 통신하지 않으며 자동 인식·매크로 기능은 제공하지 않습니다.
+      </p>
+
+      <div id="cd-record"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ 보안문자 집중 연습 — 진행 ══════════ -->
+  <section id="screen-cd-run" class="screen">
+    <div class="drill-wrap">
+      <div class="dr-top">
+        <div class="dr-progress">
+          <span id="cd-idx">1 / 10</span>
+          <div class="dr-track"><i id="cd-fill"></i></div>
+        </div>
+        <div class="dr-live">
+          <div><span>경과</span><b id="cd-elapsed">0.00</b></div>
+          <div><span>평균</span><b id="cd-avg">—</b></div>
+          <div><span>오답</span><b id="cd-miss">0</b></div>
+        </div>
+      </div>
+
+      <div class="drill-card">
+        <h2>보안문자 입력</h2>
+        <p>아래 문자를 입력하고 <b>Enter</b>를 누르세요.</p>
+        <canvas id="cd-canvas" width="260" height="80"></canvas>
+        <button class="btn-link" id="btn-cd-skip">건너뛰기 (오답 처리)</button>
+        <input type="text" id="cd-input" maxlength="8" autocomplete="off" spellcheck="false"
+               autocapitalize="off" placeholder="문자 입력">
+        <div class="captcha-msg" id="cd-msg"></div>
+        <button class="btn-primary" id="btn-cd-ok">확인</button>
+      </div>
+
+      <div class="dr-log" id="cd-log"></div>
+
+      <div class="q-actions" style="max-width:390px;margin:16px auto 0">
+        <button class="btn-ghost btn-danger" id="btn-cd-quit">연습 중단</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 보안문자 집중 연습 — 결과 ══════════ -->
+  <section id="screen-cd-result" class="screen">
+    <div class="drill-wrap" id="cd-result"></div>
+  </section>
+
 </main>
 
 <!-- 오버레이 -->
@@ -356,5 +429,6 @@
 <script src="js/analysis.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
+<script src="js/drill.js"></script>
 </body>
 </html>

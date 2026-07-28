@@ -1,9 +1,14 @@
 /* ═══════════════════════════════════════════════
-   drill.js — 보안문자 단독 연습
+   drill.js — 보안문자 집중 연습 (TicketRush 내부 모드)
 
    전체 연습에서 보안문자는 한 판에 한 번만 나온다. 그래서 이 구간만
-   따로 반복하는 페이지를 둔다. 보안문자 렌더링은 js/captcha.js 를
-   전체 연습과 공유하므로 여기서 익힌 감각이 실전과 어긋나지 않는다.
+   따로 반복하는 모드를 같은 사이트 안에 둔다. 홈 화면 버튼으로 들어간다.
+
+   보안문자 렌더링은 js/captcha.js 를 전체 연습과 공유하므로
+   여기서 익힌 감각이 실전 흐름과 어긋나지 않는다.
+
+   화면 전환은 앱의 TP.ui.show() 를 그대로 쓴다 (screen-cd-*).
+   요소 id 는 전체 연습의 보안문자 화면(#captcha-*)과 겹치지 않게 cd- 접두사를 쓴다.
 
    측정
      문제별 소요시간 = 문자가 그려진 순간부터 정답 제출까지.
@@ -14,16 +19,16 @@
 const u = TP.u, $ = u.$;
 
 /* 문제 하나당 소요시간 등급 경계(ms).
-   전체 연습의 보안문자 지표보다 빡빡하다 — 화면을 읽는 시간이 빠지고
-   순수하게 보고 타이핑하는 시간만 재기 때문이다. */
+   전체 연습의 보안문자 지표(3000/5000/8000/13000)보다 빡빡하다 —
+   화면을 읽고 찾는 시간이 빠지고 순수하게 보고 타이핑하는 시간만 재기 때문이다. */
 const TIERS = [
-  { max: 2000,  grade: 'S', name: '눈으로 바로 읽는다',
+  { max: 2000, grade: 'S', name: '눈으로 바로 읽는다',
     body: '보면서 그대로 타이핑하는 감각이 완성됐습니다. 실전에서 이 구간은 더 줄일 여지가 없습니다.' },
-  { max: 3000,  grade: 'A', name: '실전에서 통하는 속도',
+  { max: 3000, grade: 'A', name: '실전에서 통하는 속도',
     body: '이 정도면 보안문자에서 좌석을 놓치지 않습니다. 남은 건 반응속도와 좌석 판단입니다.' },
-  { max: 4500,  grade: 'B', name: '한 박자 읽고 있다',
-    body: '문자를 확인한 뒤 손이 움직이고 있습니다. 확인과 입력을 겹치는 연습이 필요합니다.' },
-  { max: 6500,  grade: 'C', name: '외운 뒤 입력하는 습관',
+  { max: 4500, grade: 'B', name: '한 박자 읽고 있다',
+    body: '문자를 확인한 뒤에 손이 움직이고 있습니다. 확인과 입력을 겹치는 연습이 필요합니다.' },
+  { max: 6500, grade: 'C', name: '외운 뒤 입력하는 습관',
     body: '전체를 외우고 나서 타이핑하면 두 배로 느려집니다. 한 글자씩 보고 바로 치세요.' },
   { max: Infinity, grade: 'D', name: '기초부터',
     body: '먼저 쉬움 난이도로 글자 모양에 익숙해지세요. 속도는 그다음입니다.' }
@@ -42,21 +47,53 @@ const Drill = {
 
   cfg: { level: 'normal', count: 10 },
 
-  /* ─────────── 화면 ─────────── */
-  show(id) {
-    u.$$('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + id));
-    window.scrollTo(0, 0);
+  /* ─────────── 진입 · 이탈 ─────────── */
+  init() {
+    const go = $('#btn-go-drill');
+    if (go) go.onclick = () => this.open();
+
+    const home = $('#btn-cd-home');
+    if (home) home.onclick = () => this.exit();
+
+    $('#btn-cd-start').onclick = () => this.start();
+    $('#btn-cd-ok').onclick = () => this.submit();
+    $('#btn-cd-skip').onclick = () => this.skip();
+    $('#btn-cd-quit').onclick = () => {
+      if (!this.results.length) return this.backToSetup();
+      if (confirm('연습을 중단하고 여기까지의 기록을 볼까요?')) this.finish(true);
+    };
+    $('#cd-input').onkeydown = e => { if (e.key === 'Enter') this.submit(); };
   },
 
-  toast(msg, kind, ms) {
-    const el = u.el('div.toast' + (kind ? '.' + kind : ''), { html: msg });
-    $('#toast-layer').appendChild(el);
-    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 250); }, ms || 2200);
+  open() {
+    TP.ui.topbar(false);          // 전체 연습용 상단 상태바는 이 모드에서 쓰지 않는다
+    this.buildSetup();
+    this.renderRecords();
+    TP.ui.show('cd-setup');
+  },
+
+  exit() {
+    this.stop();
+    TP.ui.show('home');
+  },
+
+  backToSetup() {
+    this.stop();
+    this.renderRecords();
+    TP.ui.show('cd-setup');
+  },
+
+  stop() {
+    this.running = false;
+    clearInterval(this._tick);
   },
 
   /* ─────────── 설정 화면 ─────────── */
-  init() {
-    const lg = $('#lv-grid');
+  buildSetup() {
+    if (this._built) { this.paint(); return; }
+    this._built = true;
+
+    const lg = $('#cd-lv-grid');
     lg.textContent = '';
     LEVEL_META.forEach(L => {
       const spec = TP.Captcha.LEVELS[L.id];
@@ -67,11 +104,11 @@ const Drill = {
         u.el('span', { text: `${spec.len}자` }),
         u.el('span', { text: `잡선 ${spec.lines} · 잡점 ${spec.dots}` })
       ]));
-      el.addEventListener('click', () => { this.cfg.level = L.id; this.paint(); });
+      el.addEventListener('click', () => { this.cfg.level = L.id; this.paint(); this.renderRecords(); });
       lg.appendChild(el);
     });
 
-    const cg = $('#cnt-grid');
+    const cg = $('#cd-cnt-grid');
     cg.textContent = '';
     COUNTS.forEach(n => {
       const b = u.el('button.qty-btn', { type: 'button', 'data-cnt': n, text: n + '문제' });
@@ -79,14 +116,12 @@ const Drill = {
       cg.appendChild(b);
     });
 
-    $('#btn-drill-start').onclick = () => this.start();
     this.paint();
-    this.renderRecords();
   },
 
   paint() {
-    u.$$('.diff').forEach(x => x.classList.toggle('on', x.dataset.lv === this.cfg.level));
-    u.$$('.qty-btn').forEach(x => x.classList.toggle('on', Number(x.dataset.cnt) === this.cfg.count));
+    u.$$('#cd-lv-grid .diff').forEach(x => x.classList.toggle('on', x.dataset.lv === this.cfg.level));
+    u.$$('#cd-cnt-grid .qty-btn').forEach(x => x.classList.toggle('on', Number(x.dataset.cnt) === this.cfg.count));
   },
 
   /* ─────────── 누적 기록 ─────────── */
@@ -101,11 +136,12 @@ const Drill = {
   },
 
   renderRecords() {
-    const box = $('#drill-record');
+    const box = $('#cd-record');
     box.textContent = '';
     const recs = this.load();
     if (!recs.length) return;
 
+    const lvName = LEVEL_META.find(l => l.id === this.cfg.level).name;
     const same = recs.filter(r => r.level === this.cfg.level);
     const best = same.length ? Math.min.apply(null, same.map(r => r.avg)) : null;
 
@@ -124,12 +160,12 @@ const Drill = {
     clear.addEventListener('click', () => {
       try { localStorage.removeItem(STORE_KEY); } catch (e) {}
       this.renderRecords();
-      this.toast('기록을 삭제했습니다.', 'ok');
+      TP.ui.toast('보안문자 연습 기록을 삭제했습니다.', 'ok');
     });
 
     box.appendChild(u.el('div.rec-box', {}, [
       u.el('div.rec-head', {}, [
-        u.el('h3', { text: `내 누적 기록 (${LEVEL_META.find(l => l.id === this.cfg.level).name} 기준 최고)` }),
+        u.el('h3', { text: `내 누적 기록 (최고 평균은 ${lvName} 기준)` }),
         clear
       ]),
       grid
@@ -146,43 +182,29 @@ const Drill = {
     this.qMiss = 0;
     this.running = true;
 
-    $('#dr-log').textContent = '';
-    this.show('drill');
-    this.bindDrill();
+    $('#cd-log').textContent = '';
+    TP.ui.show('cd-run');
     this.startTicker();
     this.nextQuestion();
-  },
-
-  bindDrill() {
-    if (this._bound) return;
-    this._bound = true;
-    const submit = () => this.submit();
-    $('#btn-captcha-ok').onclick = submit;
-    $('#btn-skip').onclick = () => this.skip();
-    $('#btn-drill-quit').onclick = () => {
-      if (this.results.length && confirm('연습을 중단하고 여기까지의 기록을 볼까요?')) this.finish(true);
-      else if (!this.results.length) { this.running = false; clearInterval(this._tick); this.show('setup'); }
-    };
-    $('#captcha-input').onkeydown = e => { if (e.key === 'Enter') submit(); };
   },
 
   startTicker() {
     clearInterval(this._tick);
     this._tick = setInterval(() => {
       if (!this.running || !this.qStart) return;
-      $('#dr-elapsed').textContent = ((performance.now() - this.qStart) / 1000).toFixed(2);
+      $('#cd-elapsed').textContent = ((performance.now() - this.qStart) / 1000).toFixed(2);
     }, 40);
   },
 
   nextQuestion() {
-    const inp = $('#captcha-input');
+    const inp = $('#cd-input');
     this.qMiss = 0;
-    this.answer = TP.Captcha.render($('#captcha-canvas'), this.rng, this.cfg.level);
+    this.answer = TP.Captcha.render($('#cd-canvas'), this.rng, this.cfg.level);
     inp.value = '';
     inp.classList.remove('err');
-    $('#captcha-msg').textContent = '';
-    $('#dr-idx').textContent = `${this.idx + 1} / ${this.cfg.count}`;
-    $('#dr-fill').style.width = (this.idx / this.cfg.count * 100).toFixed(1) + '%';
+    $('#cd-msg').textContent = '';
+    $('#cd-idx').textContent = `${this.idx + 1} / ${this.cfg.count}`;
+    $('#cd-fill').style.width = (this.idx / this.cfg.count * 100).toFixed(1) + '%';
     this.paintLive();
     // 문자가 그려진 뒤부터 재기 시작한다
     this.qStart = performance.now();
@@ -192,27 +214,26 @@ const Drill = {
   paintLive() {
     const done = this.results.filter(r => r.ok);
     const avg = done.length ? u.mean(done.map(r => r.ms)) : null;
-    $('#dr-avg').textContent = avg == null ? '—' : (avg / 1000).toFixed(2);
-    $('#dr-miss').textContent = this.results.reduce((a, r) => a + r.miss, 0);
+    $('#cd-avg').textContent = avg == null ? '—' : (avg / 1000).toFixed(2);
+    $('#cd-miss').textContent = this.results.reduce((a, r) => a + r.miss, 0);
   },
 
   submit() {
     if (!this.running) return;
-    const inp = $('#captcha-input');
+    const inp = $('#cd-input');
 
     if (!TP.Captcha.matches(inp.value, this.answer)) {
       this.qMiss++;
       inp.classList.add('err');
-      $('#captcha-msg').textContent = '일치하지 않습니다. 새 문자로 다시 시도하세요.';
+      $('#cd-msg').textContent = '일치하지 않습니다. 새 문자로 다시 시도하세요.';
       setTimeout(() => inp.classList.remove('err'), 340);
       // 실제 예매처처럼 새 문자를 받는다. 타이머는 계속 간다.
-      this.answer = TP.Captcha.render($('#captcha-canvas'), this.rng, this.cfg.level);
+      this.answer = TP.Captcha.render($('#cd-canvas'), this.rng, this.cfg.level);
       inp.value = '';
       inp.focus();
       this.paintLive();
       return;
     }
-
     this.record(performance.now() - this.qStart, true);
   },
 
@@ -230,13 +251,11 @@ const Drill = {
   },
 
   logItem(no, ms, ok, miss) {
-    const box = $('#dr-log');
+    const box = $('#cd-log');
     const el = u.el('div.dr-item' + (ok ? '' : '.bad'), {}, [
       u.el('span.dr-no', { text: no + '번' }),
       u.el('span.dr-t', { text: (ms / 1000).toFixed(2) + '초' }),
-      u.el('span.dr-note', {
-        text: ok ? (miss ? `정답 (오답 ${miss}회)` : '정답') : '건너뜀'
-      })
+      u.el('span.dr-note', { text: ok ? (miss ? `정답 (오답 ${miss}회)` : '정답') : '건너뜀' })
     ]);
     box.insertBefore(el, box.firstChild);
     while (box.children.length > 6) box.removeChild(box.lastChild);
@@ -244,8 +263,7 @@ const Drill = {
 
   /* ─────────── 결과 ─────────── */
   finish(quit) {
-    this.running = false;
-    clearInterval(this._tick);
+    this.stop();
 
     const ok = this.results.filter(r => r.ok);
     const times = ok.map(r => r.ms);
@@ -269,10 +287,10 @@ const Drill = {
     }
 
     const lvName = LEVEL_META.find(l => l.id === this.cfg.level).name;
-    const s = (v) => v == null ? '—' : (v / 1000).toFixed(2) + '초';
-    const wrap = $('#dr-result');
+    const s = v => v == null ? '—' : (v / 1000).toFixed(2) + '초';
+    const wrap = $('#cd-result');
     wrap.textContent = '';
-    const H = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
+    const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
 
     wrap.appendChild(H(`
       <div class="rs-hero">
@@ -306,7 +324,7 @@ const Drill = {
       </div>`));
 
     /* 문제별 막대 — 어느 문제에서 시간을 흘렸는지 한눈에 */
-    const maxMs = times.length ? Math.max.apply(null, this.results.map(r => r.ms)) : 1;
+    const maxMs = this.results.length ? Math.max.apply(null, this.results.map(r => r.ms)) : 1;
     const bars = this.results.map((r, i) => `
       <div class="dr-bar">
         <span class="dr-bar-no">${i + 1}</span>
@@ -339,7 +357,8 @@ const Drill = {
             <div class="fb-body">
               <h4>안 읽히면 붙잡지 말고 새로 받으세요</h4>
               <p>실제 예매처에도 새로고침 버튼이 있습니다. 애매한 글자를 3초 넘게 노려보는 것보다
-                 읽기 쉬운 문자를 새로 받는 편이 빠릅니다. 이 연습에서 오답이 나면 자동으로 새 문자가 나오는 것도 같은 이유입니다.</p>
+                 읽기 쉬운 문자를 새로 받는 편이 빠릅니다. 이 연습에서 오답이 나면 자동으로
+                 새 문자가 나오는 것도 같은 이유입니다.</p>
             </div>
           </div>
           <div class="fb good">
@@ -354,18 +373,20 @@ const Drill = {
       </div>`));
 
     const act = H(`<div class="rs-actions">
-        <button class="btn-primary" id="btn-dr-again">같은 조건으로 다시</button>
-        <button class="btn-ghost" id="btn-dr-setup">설정 바꾸기</button>
-        <a class="btn-ghost" href="index.html" style="text-decoration:none">전체 연습으로</a>
+        <button class="btn-primary" id="btn-cd-again">같은 조건으로 다시</button>
+        <button class="btn-ghost" id="btn-cd-reset">설정 바꾸기</button>
+        <button class="btn-ghost" id="btn-cd-back">전체 연습으로</button>
       </div>`);
     wrap.appendChild(act);
-    $('#btn-dr-again', act).onclick = () => this.start();
-    $('#btn-dr-setup', act).onclick = () => { this.renderRecords(); this.show('setup'); };
+    $('#btn-cd-again', act).onclick = () => this.start();
+    $('#btn-cd-reset', act).onclick = () => this.backToSetup();
+    $('#btn-cd-back', act).onclick = () => this.exit();
 
-    this.show('drill-result');
+    TP.ui.show('cd-result');
   }
 };
 
+Drill.results = [];
 TP.Drill = Drill;
 document.addEventListener('DOMContentLoaded', () => Drill.init());
 
