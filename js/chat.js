@@ -185,6 +185,8 @@ const Chat = {
     // 테이블·정책 문제일 때만 SQL 을 함께 띄운다 (해당 안내 문구에 SQL 이라는 말이 들어 있다)
     const needSql = !!bad && /SQL/.test(text || '');
     $('#chat-fix').classList.toggle('hidden', !needSql);
+    // 스키마 캐시 문제는 SQL 을 또 실행할 게 아니라 캐시만 새로 읽으면 된다
+    $('#chat-reload').classList.toggle('hidden', !(bad && /schema/i.test(text || '')));
   },
 
   /* ─────────── 읽기 ─────────── */
@@ -210,10 +212,34 @@ const Chat = {
     }
   },
 
+  /* 원인을 짐작하지 말고 서버가 실제로 준 메시지를 그대로 보여준다.
+     PostgREST 는 원인별로 코드를 준다 — 그걸로 안내를 갈라야 정확하다. */
   explain(code, body) {
-    if (code === 401 || code === 403) return 'anon 키가 맞지 않거나 RLS 정책이 없습니다. 설정 안내의 SQL 을 실행했는지 확인해 주세요.';
-    if (code === 404) return '글을 저장할 messages 테이블이 아직 없습니다. Supabase 대시보드의 SQL Editor 에서 아래 SQL 을 실행해 주세요 (실행하면 3초 안에 저절로 연결됩니다).';
-    return `서버 오류 (${code}). ${String(body || '').slice(0, 120)}`;
+    let j = null;
+    try { j = JSON.parse(body); } catch (e) {}
+    const msg = (j && (j.message || j.error_description || j.error || j.hint)) || '';
+    const pg = (j && j.code) || '';
+    const raw = msg ? ` — 서버 메시지: ${msg}` : (body ? ` — ${String(body).slice(0, 140)}` : '');
+
+    // 테이블은 만들었는데 API 서버가 아직 모르는 상태. 가장 흔한 함정이다.
+    if (pg === 'PGRST205' || /schema cache/i.test(msg)) {
+      return 'SQL 은 성공했지만 API 서버가 아직 새 테이블을 인식하지 못했습니다. '
+           + "SQL Editor 에서 notify pgrst, 'reload schema'; 를 실행하거나 30초쯤 기다려 주세요." + raw;
+    }
+    if (pg === '42P01' || /does not exist|relation .* not/i.test(msg)) {
+      return '글을 저장할 messages 테이블이 없습니다. 아래 SQL 을 실행해 주세요.' + raw;
+    }
+    if (pg === '42501' || /permission denied/i.test(msg)) {
+      return '테이블은 있지만 읽기·쓰기 권한이 없습니다. 아래 SQL 의 policy 부분을 실행해 주세요.' + raw;
+    }
+    if (code === 401 || code === 403) {
+      return '키가 맞지 않거나 접근 정책이 없습니다. anon public(또는 Publishable) 키인지 확인하고 아래 SQL 을 실행해 주세요.' + raw;
+    }
+    if (code === 404) {
+      return '주소가 Supabase API 주소가 아닐 수 있습니다. https://xxxx.supabase.co 형태여야 합니다 '
+           + '(대시보드 주소를 붙여넣으면 이 오류가 납니다). 테이블이 없을 때도 같은 오류가 납니다 — 아래 SQL 을 실행해 주세요.' + raw;
+    }
+    return `서버 오류 ${code}${pg ? ' / ' + pg : ''}${raw}`;
   },
 
   paintMessages(rows, scroll) {
