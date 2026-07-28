@@ -49,9 +49,7 @@ const Drill = {
 
   /* ─────────── 진입 · 이탈 ─────────── */
   init() {
-    const go = $('#btn-go-drill');
-    if (go) go.onclick = () => this.open();
-
+    // 모드 진입은 상단 메뉴(app.js 의 bindMenu)가 담당한다
     const home = $('#btn-cd-home');
     if (home) home.onclick = () => this.exit();
 
@@ -74,7 +72,8 @@ const Drill = {
 
   exit() {
     this.stop();
-    TP.ui.show('home');
+    if (TP.App && TP.App.goHome) TP.App.goHome();
+    else TP.ui.show('home');
   },
 
   backToSetup() {

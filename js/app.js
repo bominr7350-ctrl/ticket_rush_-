@@ -26,6 +26,7 @@ const App = {
   init() {
     this.renderHome();
     this.bindHome();
+    this.bindMenu();
     this.bindGlobal();
     T.detectPointer();
     if (!T.hasMouse) {
@@ -172,6 +173,71 @@ const App = {
         this.cfg.opts[k === 'refresh' ? 'refreshLimit' : k] = e.target.checked;
       });
     });
+  },
+
+  /* ══════════════════════════════════════
+     연습 모드 선택 메뉴 (햄버거)
+     ══════════════════════════════════════ */
+  bindMenu() {
+    const btn = $('#btn-menu'), panel = $('#menu-panel'), back = $('#menu-backdrop');
+
+    const setOpen = (on) => {
+      btn.classList.toggle('open', on);
+      btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+      panel.classList.toggle('hidden', !on);
+      back.classList.toggle('hidden', !on);
+      if (on) this.paintMenu();
+    };
+
+    btn.onclick = () => setOpen(panel.classList.contains('hidden'));
+    back.onclick = () => setOpen(false);
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !panel.classList.contains('hidden')) setOpen(false);
+    });
+
+    u.$$('.menu-item', panel).forEach(item => {
+      item.addEventListener('click', () => {
+        setOpen(false);
+        if (!this.leaveGuard()) return;
+        if (item.dataset.go === 'drill') TP.Drill.open();
+        else this.goHome();
+      });
+    });
+  },
+
+  /** 지금 어느 모드에 있는지 표시. 화면 상태에서 직접 읽어 모듈 간 상태 공유를 피한다 */
+  paintMenu() {
+    const onDrill = !!document.querySelector(
+      '#screen-cd-setup.active, #screen-cd-run.active, #screen-cd-result.active');
+    u.$$('.menu-item').forEach(i =>
+      i.classList.toggle('on', (i.dataset.go === 'drill') === onDrill));
+  },
+
+  /** 연습 중이면 확인을 받고 정리한다 */
+  leaveGuard() {
+    if (!this.running) return true;
+    if (!confirm('진행 중인 연습을 중단하고 이동할까요?')) return false;
+    this.abort();
+    return true;
+  },
+
+  /** 결과를 내지 않고 진행 중인 판을 정리한다 */
+  abort() {
+    this.running = false;
+    this.timerOn = false;
+    this.stopLoop();
+    T.stop();
+    window.removeEventListener('pointerdown', this._earlyHandler);
+    ui.loading(false);
+    this.phase = 'home';
+  },
+
+  goHome() {
+    if (TP.Drill) TP.Drill.stop();
+    this.renderRecords();
+    ui.topbar(false);
+    ui.show('home');
+    this.phase = 'home';
   },
 
   bindGlobal() {
@@ -1314,12 +1380,7 @@ const App = {
       </div>`);
     wrap.appendChild(act);
     $('#btn-again', act).onclick = () => this.start();
-    $('#btn-home', act).onclick = () => {
-      this.renderRecords();
-      ui.topbar(false);
-      ui.show('home');
-      this.phase = 'home';
-    };
+    $('#btn-home', act).onclick = () => this.goHome();
   }
 };
 
