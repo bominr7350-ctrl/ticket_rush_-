@@ -75,12 +75,15 @@ const Chat = {
     try { localStorage.removeItem(K_URL); localStorage.removeItem(K_KEY); } catch (e) {}
   },
 
+  /* Supabase 키 형식이 두 가지다.
+       예전: anon public — eyJ... (JWT)
+       지금: Publishable  — sb_publishable_...
+     역할(anon)을 고르는 건 apikey 헤더이므로 그것만 있으면 읽고 쓸 수 있다.
+     Authorization: Bearer 는 JWT 일 때만 붙인다 — 새 형식에 붙이면 거부될 수 있다. */
   headers(c) {
-    return {
-      'apikey': c.key,
-      'Authorization': 'Bearer ' + c.key,
-      'Content-Type': 'application/json'
-    };
+    const h = { 'apikey': c.key, 'Content-Type': 'application/json' };
+    if (/^ey[A-Za-z0-9_-]/.test(c.key)) h['Authorization'] = 'Bearer ' + c.key;
+    return h;
   },
 
   /* ─────────── 진입 · 이탈 ─────────── */

@@ -1045,3 +1045,6 @@ input{font-family:inherit}
   .chat-msg{max-width:92%}
   .chat-log{height:56vh}
 }
+.cs-tip{display:block;font-style:normal;font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px}
+.cs-tip b{color:var(--text-2);font-weight:600}
+.cs-tip u{color:#ffd27d;text-decoration-color:rgba(255,210,125,.5)}

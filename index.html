@@ -446,9 +446,10 @@
           <li>왼쪽 메뉴 <b>SQL Editor</b> 에서 아래 SQL 을 붙여넣고 실행합니다.
             <pre class="cs-sql" id="chat-sql"></pre>
           </li>
-          <li>왼쪽 메뉴 <b>Settings → API</b> 에서 두 값을 복사해 아래에 넣습니다.
-            <br><span class="cs-hint">Project URL 과 anon public 키입니다.
-            <b>service_role 키는 절대 쓰지 마세요</b> — 그 키는 모든 권한을 가집니다.</span>
+          <li>아래 두 값을 복사해 넣습니다. 위치는 <b>⚙ Project Settings → API</b>
+            (또는 <b>Data API</b> / <b>API Keys</b>) 입니다.
+            <br><span class="cs-hint">
+            <b>service_role · Secret key 는 절대 쓰지 마세요</b> — 데이터베이스 전체 권한을 가집니다.</span>
           </li>
         </ol>
 
@@ -456,10 +457,15 @@
           <span>Project URL</span>
           <input type="text" id="chat-url" placeholder="https://xxxxxxxx.supabase.co"
                  autocomplete="off" spellcheck="false">
+          <em class="cs-tip">못 찾겠으면 — 대시보드 주소창의
+            <b>/dashboard/project/<u>여기</u></b> 부분을 가져와
+            <b>https://여기.supabase.co</b> 로 만들면 됩니다.</em>
         </label>
         <label class="cs-field">
-          <span>anon public 키</span>
-          <input type="text" id="chat-key" placeholder="eyJhbGciOi..." autocomplete="off" spellcheck="false">
+          <span>anon public 키 (또는 Publishable key)</span>
+          <input type="text" id="chat-key" placeholder="eyJhbGciOi... 또는 sb_publishable_..."
+                 autocomplete="off" spellcheck="false">
+          <em class="cs-tip">두 형식 다 됩니다. 대시보드 버전에 따라 이름이 다릅니다.</em>
         </label>
         <button class="btn-primary" id="btn-chat-save">연결하기</button>
 
