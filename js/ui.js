@@ -322,56 +322,16 @@ const ui = TP.ui = {
       ? `${map.mine.length}매로 진행하기` : '다음 단계';
   },
 
-  /* ═══════════ 보안문자 ═══════════ */
+  /* ═══════════ 보안문자 ═══════════
+     생성·렌더링은 js/captcha.js 에 있다 (단독 연습 페이지와 공유). */
   captcha: {
     answer: '',
     draw(rng) {
-      const cv = $('#captcha-canvas'), ctx = cv.getContext('2d');
-      const n = 5;
-      let text = '';
-      for (let i = 0; i < n; i++) {
-        text += TP.CAPTCHA_CHARS[Math.floor(rng.f() * TP.CAPTCHA_CHARS.length)];
-      }
-      this.answer = text;
-
-      ctx.fillStyle = '#f2f4f8';
-      ctx.fillRect(0, 0, cv.width, cv.height);
-
-      // 배경 잡선
-      for (let i = 0; i < 7; i++) {
-        ctx.strokeStyle = `hsl(${rng.int(0, 360)},55%,72%)`;
-        ctx.lineWidth = rng.range(0.8, 1.8);
-        ctx.beginPath();
-        ctx.moveTo(rng.range(0, cv.width), rng.range(0, cv.height));
-        ctx.bezierCurveTo(
-          rng.range(0, cv.width), rng.range(0, cv.height),
-          rng.range(0, cv.width), rng.range(0, cv.height),
-          rng.range(0, cv.width), rng.range(0, cv.height));
-        ctx.stroke();
-      }
-      // 잡점
-      for (let i = 0; i < 140; i++) {
-        ctx.fillStyle = `hsla(${rng.int(0, 360)},40%,45%,${rng.range(.15, .5)})`;
-        ctx.fillRect(rng.range(0, cv.width), rng.range(0, cv.height), 1.6, 1.6);
-      }
-      // 문자 — 회전·기울기·크기를 흔들어 OCR/눈 모두 조금 어렵게
-      const step = cv.width / (n + 1);
-      for (let i = 0; i < n; i++) {
-        ctx.save();
-        ctx.translate(step * (i + 1) + rng.range(-5, 5), cv.height / 2 + rng.range(-5, 5));
-        ctx.rotate(rng.range(-0.42, 0.42));
-        ctx.transform(1, rng.range(-0.16, 0.16), rng.range(-0.16, 0.16), 1, 0, 0);
-        ctx.font = `bold ${rng.int(30, 40)}px "Segoe UI",Arial,sans-serif`;
-        ctx.fillStyle = `hsl(${rng.int(200, 260)},${rng.int(30, 60)}%,${rng.int(18, 34)}%)`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text[i], 0, 0);
-        ctx.restore();
-      }
-      return text;
+      this.answer = TP.Captcha.render($('#captcha-canvas'), rng, 'normal');
+      return this.answer;
     },
     check(input) {
-      return String(input || '').trim().toUpperCase() === this.answer;
+      return TP.Captcha.matches(input, this.answer);
     }
   },
 

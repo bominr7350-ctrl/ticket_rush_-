@@ -592,8 +592,7 @@ TP.FEED = {
   ]
 };
 
-/* 보안문자 — 헷갈리는 0/O/1/I/l 는 제외 */
-TP.CAPTCHA_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+/* 보안문자 문자셋과 렌더링은 js/captcha.js 에 있다 (단독 연습 페이지와 공유) */
 
 /* ─────────── 대기열 상태 문구 ─────────── */
 TP.QUEUE_MSG = {
