@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TicketRush — 티켓팅 실전 연습</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ══════════ 상단 실시간 상태바 ══════════ -->
+<header id="topbar" class="hidden">
+  <div class="tb-left">
+    <span class="tb-logo">TICKET<em>RUSH</em></span>
+    <span class="tb-sep"></span>
+    <span class="tb-clock" id="tb-clock">--:--:--</span>
+    <span class="tb-clock-label">서버시간</span>
+  </div>
+  <div class="tb-right">
+    <div class="tb-stat">
+      <span class="tb-stat-label">접속자</span>
+      <span class="tb-stat-val" id="tb-users">0</span>
+    </div>
+    <div class="tb-stat">
+      <span class="tb-stat-label">잔여좌석</span>
+      <span class="tb-stat-val" id="tb-seats">0</span>
+    </div>
+    <div class="tb-stat tb-load">
+      <span class="tb-stat-label">서버부하</span>
+      <div class="load-bar"><div class="load-fill" id="tb-loadfill"></div></div>
+      <span class="tb-stat-val" id="tb-load">0%</span>
+    </div>
+  </div>
+</header>
+
+<main id="stage">
+
+  <!-- ══════════ 1. 홈 ══════════ -->
+  <section id="screen-home" class="screen active">
+    <div class="home-hero">
+      <div class="hero-badge">티켓팅 시뮬레이터</div>
+      <h1 class="hero-title">실전은 <em>단 한 번</em>입니다.<br>연습은 몇 번이든.</h1>
+      <p class="hero-sub">
+        대기열 · 서버 지연 · 좌석 선점 경쟁 · 새로고침 제한 · 보안문자 · 결제 직전까지.<br>
+        국내 예매처의 실제 흐름을 그대로 재현하고, 끝나면 당신의 손을 분석합니다.
+      </p>
+    </div>
+
+    <div class="home-panel">
+      <div class="panel-block">
+        <h2 class="block-title"><span class="num">01</span> 공연 선택</h2>
+        <div class="concert-grid" id="concert-grid"></div>
+      </div>
+
+      <div class="panel-block">
+        <h2 class="block-title"><span class="num">02</span> 난이도</h2>
+        <div class="diff-grid" id="diff-grid"></div>
+      </div>
+
+      <div class="panel-block">
+        <h2 class="block-title"><span class="num">03</span> 연습 설정</h2>
+        <div class="player-row">
+          <label for="player-name">플레이어 이름</label>
+          <input type="text" id="player-name" maxlength="12" autocomplete="off" spellcheck="false"
+                 placeholder="이름을 넣으면 기록 랭킹에 남습니다">
+          <span class="player-hint">이름을 바꿔 저장하면 같은 기기에서 여러 명이 겨룰 수 있습니다.</span>
+        </div>
+        <div class="opt-grid">
+          <label class="opt">
+            <input type="checkbox" id="opt-captcha" checked>
+            <span class="opt-box"></span>
+            <span class="opt-text"><b>보안문자 입력</b><i>예매 직전 캡차 단계를 포함합니다</i></span>
+          </label>
+          <label class="opt">
+            <input type="checkbox" id="opt-errors" checked>
+            <span class="opt-box"></span>
+            <span class="opt-text"><b>랜덤 서버 오류</b><i>타임아웃 · 접속 지연 · 세션 만료를 무작위 발생</i></span>
+          </label>
+          <label class="opt">
+            <input type="checkbox" id="opt-refresh" checked>
+            <span class="opt-box"></span>
+            <span class="opt-text"><b>새로고침 제한</b><i>과도한 새로고침 시 대기열 초기화 및 접속 차단</i></span>
+          </label>
+          <label class="opt">
+            <input type="checkbox" id="opt-countdown" checked>
+            <span class="opt-box"></span>
+            <span class="opt-text"><b>오픈 카운트다운</b><i>정각 대기부터 시작합니다 (해제 시 즉시 시작)</i></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel-block">
+        <h2 class="block-title"><span class="num">04</span> 목표 좌석 <span class="opt-tag">선택사항</span></h2>
+        <p class="block-desc">목표를 정하면 분석 시 "원하는 자리를 잡았는지"까지 평가합니다.</p>
+        <div class="target-grid" id="target-grid"></div>
+      </div>
+
+      <button class="btn-primary btn-huge" id="btn-start">연습 시작하기</button>
+      <p class="disclaimer">
+        본 시뮬레이터는 개인 연습용이며 실제 예매처와 무관합니다.
+        어떤 실제 예매 사이트와도 통신하지 않으며, 자동화·매크로 기능을 제공하지 않습니다.
+      </p>
+    </div>
+
+    <div class="home-record" id="home-record"></div>
+  </section>
+
+  <!-- ══════════ 2. 오픈 대기 ══════════ -->
+  <section id="screen-standby" class="screen">
+    <div class="standby-wrap">
+      <div class="sb-poster" id="sb-poster"></div>
+      <div class="sb-info">
+        <div class="sb-label">티켓 오픈까지</div>
+        <div class="sb-count" id="sb-count">00:10</div>
+        <div class="sb-ms" id="sb-ms">.000</div>
+        <div class="sb-title" id="sb-title"></div>
+        <div class="sb-meta" id="sb-meta"></div>
+        <button class="btn-primary btn-book" id="btn-book" disabled>예매하기</button>
+        <div class="sb-hint" id="sb-hint">오픈 시각에 버튼이 활성화됩니다. 미리 클릭해도 소용없습니다.</div>
+        <div class="sb-early hidden" id="sb-early"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 3. 대기열 ══════════ -->
+  <section id="screen-queue" class="screen">
+    <div class="queue-card">
+      <div class="q-head">
+        <div class="q-brand">TICKETRUSH</div>
+        <div class="q-title">접속 대기 중입니다</div>
+      </div>
+
+      <div class="q-visual">
+        <div class="q-numrow">
+          <span class="q-numlabel">내 앞의 대기인원</span>
+          <span class="q-numval"><b id="q-ahead">0</b>명</span>
+        </div>
+        <div class="q-track"><div class="q-fill" id="q-fill"></div></div>
+        <div class="q-trackfoot">
+          <span>진행률 <b id="q-pct">0%</b></span>
+          <span>입장</span>
+        </div>
+      </div>
+
+      <div class="q-stats">
+        <div class="q-stat"><span>예상 대기시간</span><b id="q-eta">계산 중</b></div>
+        <div class="q-stat"><span>전체 대기인원</span><b id="q-total">0명</b></div>
+        <div class="q-stat"><span>처리 속도</span><b id="q-rate">0명/초</b></div>
+      </div>
+
+      <div class="q-status" id="q-status">대기열에 정상 진입했습니다.</div>
+
+      <div class="q-warn">
+        <b>새로고침하면 대기 순번이 뒤로 밀립니다.</b>
+        <span>실제 예매처에서는 사실상 꼴찌로 밀려 회복이 불가능합니다.
+              연습이니 페널티는 짧게 줄여두었지만, 습관은 실전에서 그대로 나옵니다.</span>
+      </div>
+
+      <div class="q-actions">
+        <button class="btn-ghost" id="btn-refresh">새로고침</button>
+        <button class="btn-ghost btn-danger" id="btn-quit">연습 중단</button>
+      </div>
+      <div class="q-refresh-count" id="q-refresh-count"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ 5. 날짜 · 회차 선택 ══════════ -->
+  <section id="screen-schedule" class="screen">
+    <div class="book-head">
+      <div class="bh-left">
+        <div class="bh-title" id="sch-title"></div>
+        <div class="bh-sub">관람일과 회차를 선택하세요. 이 화면에 머무는 동안에도 좌석은 계속 팔립니다.</div>
+      </div>
+      <div class="bh-right">
+        <div class="bh-timer">남은 시간 <b id="sch-timer">10:00</b></div>
+      </div>
+    </div>
+    <div class="sch-body">
+      <div class="sch-main">
+        <h3 class="sch-h">관람일</h3>
+        <div class="sch-dates" id="sch-dates"></div>
+        <h3 class="sch-h">회차</h3>
+        <div class="sch-rounds" id="sch-rounds">
+          <p class="sch-empty">먼저 관람일을 선택해 주세요.</p>
+        </div>
+      </div>
+      <aside class="sch-side">
+        <h3>선택 내역</h3>
+        <div class="sch-picked" id="sch-picked"><p class="empty">회차를 선택해 주세요.</p></div>
+        <h3 class="sch-h2">매수</h3>
+        <div class="qty-grid" id="qty-grid"></div>
+        <p class="sch-note">매수를 먼저 정해두면 좌석 화면에서 고민할 시간이 줄어듭니다.</p>
+        <button class="btn-primary" id="btn-sch-next" disabled>좌석 선택</button>
+        <div class="live-feed" id="live-feed-sch"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════ 6. 구역 선택 ══════════ -->
+  <section id="screen-zone" class="screen">
+    <div class="book-head">
+      <div class="bh-left">
+        <div class="bh-title" id="zone-title"></div>
+        <div class="bh-sub" id="zone-sub"></div>
+      </div>
+      <div class="bh-right">
+        <div class="bh-timer">남은 시간 <b id="zone-timer">10:00</b></div>
+      </div>
+    </div>
+    <div class="zone-body">
+      <div class="venue" id="venue"></div>
+      <aside class="zone-side">
+        <h3>등급 · 잔여</h3>
+        <div class="grade-list" id="grade-list"></div>
+        <div class="live-feed" id="live-feed-zone"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════ 7. 좌석 선택 ══════════ -->
+  <section id="screen-seat" class="screen">
+    <div class="book-head">
+      <div class="bh-left">
+        <button class="btn-back" id="btn-back-zone">◀ 구역 다시 선택</button>
+        <div class="bh-title" id="seat-title"></div>
+      </div>
+      <div class="bh-right">
+        <div class="bh-timer">남은 시간 <b id="seat-timer">10:00</b></div>
+      </div>
+    </div>
+    <div class="seat-body">
+      <div class="seat-main">
+        <div class="stage-bar">S T A G E</div>
+        <div class="seat-scroll"><div class="seat-grid" id="seat-grid"></div></div>
+        <div class="seat-legend">
+          <span><i class="lg lg-av"></i>선택가능</span>
+          <span><i class="lg lg-hold"></i>선택중</span>
+          <span><i class="lg lg-sold"></i>판매완료</span>
+          <span><i class="lg lg-mine"></i>내 선택</span>
+        </div>
+      </div>
+      <aside class="seat-side">
+        <h3>선택 좌석</h3>
+        <div class="picked" id="picked-list"><p class="empty">좌석을 선택해 주세요.</p></div>
+        <div class="picked-sum">
+          <div><span>매수</span><b id="pick-count">0매</b></div>
+          <div><span>결제 예정금액</span><b id="pick-price">0원</b></div>
+        </div>
+        <button class="btn-primary" id="btn-to-next" disabled>다음 단계</button>
+        <div class="live-feed" id="live-feed-seat"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════ 4. 보안문자 (대기열 통과 직후) ══════════ -->
+  <section id="screen-captcha" class="screen">
+    <div class="captcha-card">
+      <h2>보안문자 입력</h2>
+      <p>부정예매 방지를 위해 아래 문자를 입력해 주세요.<br>
+         <b>입력하는 동안에도 좌석은 계속 팔립니다.</b></p>
+      <canvas id="captcha-canvas" width="260" height="80"></canvas>
+      <button class="btn-link" id="btn-captcha-new">새로고침 ⟳</button>
+      <input type="text" id="captcha-input" maxlength="8" autocomplete="off" spellcheck="false" placeholder="문자 입력">
+      <div class="captcha-msg" id="captcha-msg"></div>
+      <button class="btn-primary" id="btn-captcha-ok">확인</button>
+      <div class="captcha-timer">남은 시간 <b id="captcha-timer">10:00</b></div>
+    </div>
+  </section>
+
+  <!-- ══════════ 8. 결제 직전 ══════════ -->
+  <section id="screen-checkout" class="screen">
+    <div class="checkout-wrap">
+      <div class="co-steps"><span>좌석선택</span><i>›</i><span>가격/할인</span><i>›</i><span class="on">결제</span></div>
+      <div class="co-grid">
+        <div class="co-main">
+          <section class="co-box">
+            <h3>예매 정보</h3>
+            <div class="co-rows" id="co-info"></div>
+          </section>
+          <section class="co-box">
+            <h3>할인 선택</h3>
+            <div class="co-discounts" id="co-discounts"></div>
+          </section>
+          <section class="co-box">
+            <h3>결제 수단</h3>
+            <div class="co-pays" id="co-pays"></div>
+          </section>
+          <label class="co-agree">
+            <input type="checkbox" id="co-agree-chk">
+            <span class="opt-box"></span>
+            <span>예매자 본인 확인 및 취소·환불 규정에 동의합니다. (필수)</span>
+          </label>
+        </div>
+        <aside class="co-side">
+          <h3>최종 결제금액</h3>
+          <div class="co-sum" id="co-sum"></div>
+          <div class="co-total"><span>총 결제금액</span><b id="co-total">0원</b></div>
+          <button class="btn-primary btn-pay" id="btn-pay" disabled>결제하기</button>
+          <p class="co-note">연습 모드입니다. 실제 결제는 진행되지 않으며, 이 버튼을 누르면 연습이 종료되고 분석 리포트가 표시됩니다.</p>
+          <div class="co-timer">결제 제한시간 <b id="co-timer">10:00</b></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 9. 결과 리포트 ══════════ -->
+  <section id="screen-result" class="screen">
+    <div class="result-wrap" id="result-wrap"></div>
+  </section>
+
+</main>
+
+<!-- 오버레이 -->
+<div id="loading-overlay" class="hidden">
+  <div class="lo-box">
+    <div class="lo-spinner"></div>
+    <div class="lo-text" id="lo-text">처리 중입니다...</div>
+    <div class="lo-sub" id="lo-sub"></div>
+  </div>
+</div>
+
+<div id="block-overlay" class="hidden">
+  <div class="blk-box">
+    <div class="blk-icon">⛔</div>
+    <h2 id="blk-title">비정상적인 접근이 감지되었습니다</h2>
+    <p id="blk-desc">잠시 후 다시 시도해 주세요.</p>
+    <div class="blk-count" id="blk-count">5</div>
+  </div>
+</div>
+
+<div id="toast-layer"></div>
+
+<script src="js/core.js"></script>
+<script src="js/data.js"></script>
+<script src="js/telemetry.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/seats.js"></script>
+<script src="js/rank.js"></script>
+<script src="js/analysis.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
