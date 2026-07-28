@@ -40,12 +40,13 @@ const LEVEL_META = [
   { id: 'hard',   name: '어려움', desc: '6자 · 회전과 잡선이 심해 눈이 헤맵니다.' }
 ];
 
-const COUNTS = [5, 10, 20, 30];
+const COUNTS = [5, 9, 15, 20];
 const STORE_KEY = 'ticketrush.captchaDrill.v1';
 
 const Drill = {
 
-  cfg: { level: 'normal', count: 10 },
+  // count 는 반드시 COUNTS 안의 값이어야 한다 (아니면 아무 버튼도 선택돼 보이지 않는다)
+  cfg: { level: 'normal', count: 9 },
 
   /* ─────────── 진입 · 이탈 ─────────── */
   init() {
