@@ -39,7 +39,8 @@ const App = {
     cg.textContent = '';
     TP.CONCERTS.forEach(c => {
       const el = u.el('button.concert', { type: 'button', 'data-id': c.id });
-      el.appendChild(u.el('div.c-art', { html: TP.POSTERS[c.id] || '' }));
+      // 대기 화면 포스터와 gradient id 가 겹치지 않도록 인스턴스 구분자를 다르게 준다
+      el.appendChild(u.el('div.c-art', { html: TP.posterSVG(c.id, 'card') }));
       const body = u.el('div.c-body');
       body.appendChild(u.el('div.c-name', { text: c.name }));
       // 공연장은 아래에서 따로 고르므로 여기서는 표기하지 않는다 (덮어쓰면 서로 어긋난다)
@@ -355,7 +356,7 @@ const App = {
     this.phase = 'standby';
     ui.show('standby');
     const c = this.cfg.concert, d = this.cfg.difficulty;
-    $('#sb-poster').innerHTML = TP.POSTERS[c.id] || '';
+    $('#sb-poster').innerHTML = TP.posterSVG(c.id, 'standby');
     $('#sb-title').textContent = c.name;
     $('#sb-meta').innerHTML =
       `${c.artist} · ${TP.venueOf(this.cfg).name}<br>${c.date}<br>` +

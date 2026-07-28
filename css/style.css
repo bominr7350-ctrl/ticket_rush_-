@@ -237,10 +237,12 @@ input{font-family:inherit}
 }
 @media(max-width:720px){.standby-wrap{grid-template-columns:1fr;gap:24px;padding:36px 20px}}
 .sb-poster{
-  aspect-ratio:3/4;border-radius:var(--radius);overflow:hidden;
+  position:relative;width:100%;aspect-ratio:3/4;min-height:220px;
+  border-radius:var(--radius);overflow:hidden;
   box-shadow:var(--shadow);background:var(--surface-2);
 }
-.sb-poster svg{display:block;width:100%;height:100%}
+/* absolute 로 채워야 aspect-ratio 계산 순서와 무관하게 항상 보인다 */
+.sb-poster svg{position:absolute;inset:0;width:100%;height:100%}
 .sb-label{color:var(--muted);font-size:13px;letter-spacing:.04em}
 .sb-count{
   font-family:var(--mono);font-size:clamp(56px,11vw,88px);font-weight:800;

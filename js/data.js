@@ -232,32 +232,37 @@ TP.venueOf = function (cfg) {
 
 /* ─────────── 공연 포스터 ───────────
    외부 이미지 없이 SVG 로 직접 그린다. (파일 하나로 실행되어야 하므로)
-   gradient id 는 네 장이 한 화면에 같이 뜨므로 공연별로 접두사를 붙여 겹치지 않게 한다.
-   preserveAspectRatio="slice" 로 카드 크기에 맞춰 잘라 채운다. */
+   preserveAspectRatio="slice" 로 카드 크기에 맞춰 잘라 채운다.
+
+   같은 포스터가 홈 카드와 오픈 대기 화면에 동시에 존재하므로
+   gradient/filter id 가 그대로면 문서 안에서 중복된다. 중복되면 url(#..) 가
+   앞쪽(숨겨진 홈 카드) 것을 가리켜 채색이 깨지고 검은 판이 된다.
+   그래서 id 에 __U__ 자리표시자를 두고, 그릴 때마다 TP.posterSVG() 가
+   서로 다른 접미사로 치환한다. */
 TP.POSTERS = {
 
   /* 오로라 리본 — 하늘에 흐르는 빛의 띠 */
   idol: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
     <defs>
-      <linearGradient id="pa-bg" x1="0" y1="0" x2="1" y2="1">
+      <linearGradient id="pa-bg__U__" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#160a2b"/><stop offset=".55" stop-color="#3a0f33"/><stop offset="1" stop-color="#5c1230"/>
       </linearGradient>
-      <linearGradient id="pa-r1" x1="0" y1="0" x2="1" y2="0">
+      <linearGradient id="pa-r1__U__" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#ff4d6d" stop-opacity="0"/><stop offset=".45" stop-color="#ff4d6d" stop-opacity=".9"/><stop offset="1" stop-color="#ffb26b" stop-opacity="0"/>
       </linearGradient>
-      <linearGradient id="pa-r2" x1="0" y1="0" x2="1" y2="0">
+      <linearGradient id="pa-r2__U__" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#7c5cff" stop-opacity="0"/><stop offset=".5" stop-color="#a978ff" stop-opacity=".85"/><stop offset="1" stop-color="#4ad8ff" stop-opacity="0"/>
       </linearGradient>
-      <linearGradient id="pa-r3" x1="0" y1="0" x2="1" y2="0">
+      <linearGradient id="pa-r3__U__" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#4ad8ff" stop-opacity="0"/><stop offset=".5" stop-color="#5ef0d0" stop-opacity=".55"/><stop offset="1" stop-color="#4ad8ff" stop-opacity="0"/>
       </linearGradient>
-      <filter id="pa-b"><feGaussianBlur stdDeviation="7"/></filter>
+      <filter id="pa-b__U__"><feGaussianBlur stdDeviation="7"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pa-bg)"/>
-    <g filter="url(#pa-b)">
-      <path d="M-20 96 C50 44 110 118 176 66 S276 26 340 58" stroke="url(#pa-r1)" stroke-width="21" fill="none"/>
-      <path d="M-20 62 C60 108 118 34 190 84 S288 112 340 74" stroke="url(#pa-r2)" stroke-width="17" fill="none"/>
-      <path d="M-20 120 C70 86 130 138 210 104 S300 130 340 108" stroke="url(#pa-r3)" stroke-width="12" fill="none"/>
+    <rect width="320" height="146" fill="url(#pa-bg__U__)"/>
+    <g filter="url(#pa-b__U__)">
+      <path d="M-20 96 C50 44 110 118 176 66 S276 26 340 58" stroke="url(#pa-r1__U__)" stroke-width="21" fill="none"/>
+      <path d="M-20 62 C60 108 118 34 190 84 S288 112 340 74" stroke="url(#pa-r2__U__)" stroke-width="17" fill="none"/>
+      <path d="M-20 120 C70 86 130 138 210 104 S300 130 340 108" stroke="url(#pa-r3__U__)" stroke-width="12" fill="none"/>
     </g>
     <g fill="#fff">
       <circle cx="34" cy="26" r="1.5" opacity=".9"/><circle cx="88" cy="16" r="1" opacity=".6"/>
@@ -270,22 +275,22 @@ TP.POSTERS = {
   /* 여름의 마지막 노을 — 지는 해와 바다 */
   band: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
     <defs>
-      <linearGradient id="pb-sky" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="pb-sky__U__" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#1b2a6b"/><stop offset=".42" stop-color="#7b3f8f"/>
         <stop offset=".68" stop-color="#e8654f"/><stop offset="1" stop-color="#ffb45e"/>
       </linearGradient>
-      <linearGradient id="pb-sun" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="pb-sun__U__" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#ff8a3d"/>
       </linearGradient>
-      <linearGradient id="pb-sea" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="pb-sea__U__" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#2a1245"/><stop offset="1" stop-color="#0d0a24"/>
       </linearGradient>
-      <filter id="pb-g"><feGaussianBlur stdDeviation="9"/></filter>
+      <filter id="pb-g__U__"><feGaussianBlur stdDeviation="9"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pb-sky)"/>
-    <circle cx="160" cy="98" r="46" fill="#ffd08a" opacity=".45" filter="url(#pb-g)"/>
-    <circle cx="160" cy="98" r="30" fill="url(#pb-sun)"/>
-    <rect y="98" width="320" height="48" fill="url(#pb-sea)"/>
+    <rect width="320" height="146" fill="url(#pb-sky__U__)"/>
+    <circle cx="160" cy="98" r="46" fill="#ffd08a" opacity=".45" filter="url(#pb-g__U__)"/>
+    <circle cx="160" cy="98" r="30" fill="url(#pb-sun__U__)"/>
+    <rect y="98" width="320" height="48" fill="url(#pb-sea__U__)"/>
     <g stroke="#ffb45e" stroke-linecap="round" opacity=".75">
       <path d="M138 106h44" stroke-width="2"/><path d="M144 114h32" stroke-width="1.6" opacity=".8"/>
       <path d="M132 122h56" stroke-width="1.4" opacity=".6"/><path d="M148 130h24" stroke-width="1.2" opacity=".45"/>
@@ -301,38 +306,38 @@ TP.POSTERS = {
   /* 페스티벌 — 이퀄라이저 바와 조명 */
   fest: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
     <defs>
-      <linearGradient id="pf-bg" x1="0" y1="0" x2="1" y2="1">
+      <linearGradient id="pf-bg__U__" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#04231f"/><stop offset=".5" stop-color="#062b3d"/><stop offset="1" stop-color="#0a1440"/>
       </linearGradient>
-      <linearGradient id="pf-b1" x1="0" y1="1" x2="0" y2="0">
+      <linearGradient id="pf-b1__U__" x1="0" y1="1" x2="0" y2="0">
         <stop offset="0" stop-color="#22c98f"/><stop offset="1" stop-color="#8ff5c8"/>
       </linearGradient>
-      <linearGradient id="pf-b2" x1="0" y1="1" x2="0" y2="0">
+      <linearGradient id="pf-b2__U__" x1="0" y1="1" x2="0" y2="0">
         <stop offset="0" stop-color="#2f7bff"/><stop offset="1" stop-color="#8fd0ff"/>
       </linearGradient>
-      <linearGradient id="pf-b3" x1="0" y1="1" x2="0" y2="0">
+      <linearGradient id="pf-b3__U__" x1="0" y1="1" x2="0" y2="0">
         <stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#ffe9a8"/>
       </linearGradient>
-      <filter id="pf-g"><feGaussianBlur stdDeviation="6"/></filter>
+      <filter id="pf-g__U__"><feGaussianBlur stdDeviation="6"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pf-bg)"/>
-    <g opacity=".5" filter="url(#pf-g)">
+    <rect width="320" height="146" fill="url(#pf-bg__U__)"/>
+    <g opacity=".5" filter="url(#pf-g__U__)">
       <path d="M40 146L18 22h20z" fill="#22c98f"/><path d="M160 146l-8-128h18z" fill="#4a86ff"/><path d="M282 146l22-124h-20z" fill="#ffb020"/>
     </g>
     <g>
-      <rect x="18"  y="96"  width="15" height="50" rx="3" fill="url(#pf-b1)"/>
-      <rect x="41"  y="66"  width="15" height="80" rx="3" fill="url(#pf-b2)"/>
-      <rect x="64"  y="108" width="15" height="38" rx="3" fill="url(#pf-b3)"/>
-      <rect x="87"  y="44"  width="15" height="102" rx="3" fill="url(#pf-b1)"/>
-      <rect x="110" y="82"  width="15" height="64" rx="3" fill="url(#pf-b2)"/>
-      <rect x="133" y="30"  width="15" height="116" rx="3" fill="url(#pf-b3)"/>
-      <rect x="156" y="72"  width="15" height="74" rx="3" fill="url(#pf-b1)"/>
-      <rect x="179" y="52"  width="15" height="94" rx="3" fill="url(#pf-b2)"/>
-      <rect x="202" y="100" width="15" height="46" rx="3" fill="url(#pf-b3)"/>
-      <rect x="225" y="60"  width="15" height="86" rx="3" fill="url(#pf-b1)"/>
-      <rect x="248" y="90"  width="15" height="56" rx="3" fill="url(#pf-b2)"/>
-      <rect x="271" y="38"  width="15" height="108" rx="3" fill="url(#pf-b3)"/>
-      <rect x="294" y="86"  width="15" height="60" rx="3" fill="url(#pf-b1)"/>
+      <rect x="18"  y="96"  width="15" height="50" rx="3" fill="url(#pf-b1__U__)"/>
+      <rect x="41"  y="66"  width="15" height="80" rx="3" fill="url(#pf-b2__U__)"/>
+      <rect x="64"  y="108" width="15" height="38" rx="3" fill="url(#pf-b3__U__)"/>
+      <rect x="87"  y="44"  width="15" height="102" rx="3" fill="url(#pf-b1__U__)"/>
+      <rect x="110" y="82"  width="15" height="64" rx="3" fill="url(#pf-b2__U__)"/>
+      <rect x="133" y="30"  width="15" height="116" rx="3" fill="url(#pf-b3__U__)"/>
+      <rect x="156" y="72"  width="15" height="74" rx="3" fill="url(#pf-b1__U__)"/>
+      <rect x="179" y="52"  width="15" height="94" rx="3" fill="url(#pf-b2__U__)"/>
+      <rect x="202" y="100" width="15" height="46" rx="3" fill="url(#pf-b3__U__)"/>
+      <rect x="225" y="60"  width="15" height="86" rx="3" fill="url(#pf-b1__U__)"/>
+      <rect x="248" y="90"  width="15" height="56" rx="3" fill="url(#pf-b2__U__)"/>
+      <rect x="271" y="38"  width="15" height="108" rx="3" fill="url(#pf-b3__U__)"/>
+      <rect x="294" y="86"  width="15" height="60" rx="3" fill="url(#pf-b1__U__)"/>
     </g>
     <g fill="#fff">
       <circle cx="52" cy="24" r="2" opacity=".8"/><circle cx="124" cy="16" r="1.6" opacity=".6"/>
@@ -343,29 +348,40 @@ TP.POSTERS = {
   /* 그날의 파도 — 달빛과 겹치는 물결 */
   musical: `<svg viewBox="0 0 320 146" preserveAspectRatio="xMidYMid slice">
     <defs>
-      <linearGradient id="pm-bg" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="pm-bg__U__" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#1a1005"/><stop offset=".5" stop-color="#5a1f1a"/><stop offset="1" stop-color="#2b0a14"/>
       </linearGradient>
-      <linearGradient id="pm-w1" x1="0" y1="0" x2="1" y2="0">
+      <linearGradient id="pm-w1__U__" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#ff5f4d"/>
       </linearGradient>
-      <linearGradient id="pm-w2" x1="0" y1="0" x2="1" y2="0">
+      <linearGradient id="pm-w2__U__" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#ff5f4d"/><stop offset="1" stop-color="#a8243f"/>
       </linearGradient>
-      <radialGradient id="pm-m"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#ffd98a"/></radialGradient>
-      <filter id="pm-g"><feGaussianBlur stdDeviation="8"/></filter>
+      <radialGradient id="pm-m__U__"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#ffd98a"/></radialGradient>
+      <filter id="pm-g__U__"><feGaussianBlur stdDeviation="8"/></filter>
     </defs>
-    <rect width="320" height="146" fill="url(#pm-bg)"/>
-    <circle cx="246" cy="40" r="30" fill="#ffd98a" opacity=".35" filter="url(#pm-g)"/>
-    <circle cx="246" cy="40" r="17" fill="url(#pm-m)"/>
+    <rect width="320" height="146" fill="url(#pm-bg__U__)"/>
+    <circle cx="246" cy="40" r="30" fill="#ffd98a" opacity=".35" filter="url(#pm-g__U__)"/>
+    <circle cx="246" cy="40" r="17" fill="url(#pm-m__U__)"/>
     <g opacity=".28" fill="none" stroke="#ffe0a8">
       <path d="M0 86c40-18 76 10 116-6s72-20 108-4 62 16 96 2" stroke-width="1.4"/>
       <path d="M0 74c44-16 72 12 118-4s70-18 104-2 64 14 98 0" stroke-width="1"/>
     </g>
-    <path d="M-10 104c46-26 88 12 138-8s94-14 140 10 62 6 62 6v42H-10z" fill="url(#pm-w2)" opacity=".85"/>
-    <path d="M-10 122c52-22 94 10 146-8s90-8 194 8v30H-10z" fill="url(#pm-w1)" opacity=".9"/>
+    <path d="M-10 104c46-26 88 12 138-8s94-14 140 10 62 6 62 6v42H-10z" fill="url(#pm-w2__U__)" opacity=".85"/>
+    <path d="M-10 122c52-22 94 10 146-8s90-8 194 8v30H-10z" fill="url(#pm-w1__U__)" opacity=".9"/>
     <path d="M-10 136c60-14 110 8 168-4s100-4 172 6v14H-10z" fill="#2b0a14"/>
   </svg>`
+};
+
+/**
+ * 포스터 SVG 를 꺼낸다.
+ * @param {string} concertId 공연 id
+ * @param {string} uid       인스턴스 구분자. 같은 포스터를 여러 곳에 그릴 때
+ *                           반드시 서로 다른 값을 줘야 gradient id 가 겹치지 않는다.
+ */
+TP.posterSVG = function (concertId, uid) {
+  const svg = TP.POSTERS[concertId];
+  return svg ? svg.replace(/__U__/g, '-' + (uid || 'x')) : '';
 };
 
 /* ─────────── 공연 목록 ───────────
