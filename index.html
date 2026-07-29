@@ -28,10 +28,6 @@
     <b>보안문자 연습만</b>
     <i>보안문자 구간만 5~20문제 연속 반복. 문제당 속도와 정확도 측정</i>
   </button>
-  <button type="button" class="menu-item" data-go="chat">
-    <b>커뮤니티 · 채팅</b>
-    <i>꿀팁 공유하고 공연장 구역별 시야를 물어보는 실시간 채팅방</i>
-  </button>
 </nav>
 
 <!-- ══════════ 상단 실시간 상태바 ══════════ -->
@@ -414,103 +410,6 @@
     <div class="drill-wrap" id="cd-result"></div>
   </section>
 
-  <!-- ══════════ 커뮤니티 · 채팅 ══════════ -->
-  <section id="screen-chat" class="screen">
-    <div class="chat-wrap">
-      <button type="button" class="drill-back" id="btn-chat-home">← 전체 연습으로</button>
-
-      <div class="chat-head">
-        <div>
-          <h1>커뮤니티</h1>
-          <p>꿀팁을 나누고 공연장 구역별 시야를 물어보는 곳입니다.</p>
-        </div>
-        <div class="chat-me">
-          <span>내 이름</span>
-          <b id="chat-nick">이름 없음</b>
-        </div>
-      </div>
-      <p class="chat-warn hidden" id="chat-nick-warn">
-        홈 화면 <b>연습 설정 → 플레이어 이름</b>을 정해두면 그 이름으로 글이 올라갑니다.
-      </p>
-
-      <!-- 접속 설정이 없을 때 -->
-      <div id="chat-setup" class="chat-setup hidden">
-        <h2>처음 한 번만 연결하면 됩니다</h2>
-        <p class="cs-lead">
-          채팅은 글을 보관할 서버가 필요합니다. 무료인 <b>Supabase</b>를 쓰면 카드 등록 없이 만들 수 있습니다.
-          아래 순서대로 하시면 됩니다. <b>제가 회원님 키를 볼 수 없고</b>, 입력한 값은 이 브라우저에만 저장됩니다.
-        </p>
-
-        <ol class="cs-steps">
-          <li><b>supabase.com</b> 에서 무료 가입하고 프로젝트를 하나 만듭니다.</li>
-          <li>왼쪽 메뉴 <b>SQL Editor</b> 에서 아래 SQL 을 붙여넣고 실행합니다.
-            <pre class="cs-sql" id="chat-sql"></pre>
-          </li>
-          <li>아래 두 값을 복사해 넣습니다. 위치는 <b>⚙ Project Settings → API</b>
-            (또는 <b>Data API</b> / <b>API Keys</b>) 입니다.
-            <br><span class="cs-hint">
-            <b>service_role · Secret key 는 절대 쓰지 마세요</b> — 데이터베이스 전체 권한을 가집니다.</span>
-          </li>
-        </ol>
-
-        <label class="cs-field">
-          <span>Project URL</span>
-          <input type="text" id="chat-url" placeholder="https://xxxxxxxx.supabase.co"
-                 autocomplete="off" spellcheck="false">
-          <em class="cs-tip">못 찾겠으면 — 대시보드 주소창의
-            <b>/dashboard/project/<u>여기</u></b> 부분을 가져와
-            <b>https://여기.supabase.co</b> 로 만들면 됩니다.</em>
-        </label>
-        <label class="cs-field">
-          <span>anon public 키 (또는 Publishable key)</span>
-          <input type="text" id="chat-key" placeholder="eyJhbGciOi... 또는 sb_publishable_..."
-                 autocomplete="off" spellcheck="false">
-          <em class="cs-tip">두 형식 다 됩니다. 대시보드 버전에 따라 이름이 다릅니다.</em>
-        </label>
-        <button class="btn-primary" id="btn-chat-save">연결하기</button>
-
-        <p class="cs-note">
-          다른 사람이 같이 쓰려면 이 사이트가 인터넷에 올라가 있어야 합니다.
-          GitHub Pages 로 배포하면 주소가 생기고, 접속한 사람들이 각자 이름을 정해 바로 대화할 수 있습니다.
-        </p>
-      </div>
-
-      <!-- 연결됐을 때 -->
-      <div id="chat-live" class="hidden">
-        <div class="chat-rooms" id="chat-rooms"></div>
-        <p class="chat-room-desc" id="chat-room-desc"></p>
-
-        <div class="chat-log" id="chat-log"></div>
-        <div class="chat-status" id="chat-status"></div>
-
-        <!-- 연결은 됐지만 테이블·정책이 없을 때. 설정 화면은 숨겨져 있으므로 여기서 다시 보여준다 -->
-        <!-- 테이블은 만들었는데 API 서버가 아직 모를 때 -->
-        <div class="chat-fix hidden" id="chat-reload">
-          <b>이 한 줄만 SQL Editor 에서 실행하면 됩니다</b>
-          <pre class="cs-sql">notify pgrst, 'reload schema';</pre>
-          <span>테이블은 이미 만들어졌습니다. API 서버가 새 테이블을 다시 읽게 하는 명령입니다.</span>
-        </div>
-
-        <div class="chat-fix hidden" id="chat-fix">
-          <b>Supabase 대시보드 → SQL Editor 에서 아래를 붙여넣고 Run 하세요</b>
-          <pre class="cs-sql" id="chat-fix-sql"></pre>
-          <span>실행하면 3초 안에 저절로 연결됩니다. 새로고침하지 않아도 됩니다.</span>
-        </div>
-
-        <div class="chat-form">
-          <input type="text" id="chat-input" maxlength="500" autocomplete="off"
-                 placeholder="메시지를 입력하고 Enter">
-          <button class="btn-primary" id="btn-chat-send">보내기</button>
-        </div>
-
-        <div class="chat-foot">
-          <span>3초마다 새 글을 확인합니다. 공개 채팅이니 개인정보는 쓰지 마세요.</span>
-          <button type="button" class="btn-link" id="btn-chat-reset">접속 정보 지우기</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
 </main>
 
 <!-- 오버레이 -->
@@ -544,6 +443,5 @@
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
 <script src="js/drill.js"></script>
-<script src="js/chat.js"></script>
 </body>
 </html>

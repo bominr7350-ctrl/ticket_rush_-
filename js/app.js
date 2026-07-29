@@ -206,7 +206,6 @@ const App = {
         if (!this.leaveGuard()) return;
         const go = item.dataset.go;
         if (go === 'drill') TP.Drill.open();
-        else if (go === 'chat') TP.Chat.open();
         else this.goHome();
       });
     });
@@ -227,8 +226,7 @@ const App = {
   paintMenu() {
     const q = (sel) => !!document.querySelector(sel);
     const active =
-      q('#screen-cd-setup.active, #screen-cd-run.active, #screen-cd-result.active') ? 'drill' :
-      q('#screen-chat.active') ? 'chat' : 'home';
+      q('#screen-cd-setup.active, #screen-cd-run.active, #screen-cd-result.active') ? 'drill' : 'home';
     u.$$('.menu-item').forEach(i => i.classList.toggle('on', i.dataset.go === active));
   },
 
@@ -253,7 +251,6 @@ const App = {
 
   goHome() {
     if (TP.Drill) TP.Drill.stop();
-    if (TP.Chat) TP.Chat.stop();      // 채팅 폴링을 멈춰야 홈에서 계속 요청하지 않는다
     this.renderRecords();
     ui.topbar(false);
     ui.show('home');
