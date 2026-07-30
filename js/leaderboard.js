@@ -150,8 +150,10 @@ const LB = {
   },
 
   /**
-   * 결과 화면에 온라인 랭킹 박스를 그린다. 연결 정보가 없으면 설정 안내를,
-   * 있으면 이번 판을 등록하고 전체 순위를 불러와 보여준다.
+   * 온라인 랭킹 박스를 그린다. 연결 정보가 없으면 설정 안내를 보여준다.
+   * info.reactionMs 가 있으면 이번 기록을 등록하고 내 순위까지 보여주고,
+   * 없으면(= 연습을 아직 완료하지 않고 메뉴에서 바로 들어온 경우) 등록 없이
+   * 전체 순위판만 보여준다.
    * @param {HTMLElement} box
    * @param {object} info { nick, difficulty, reactionMs, seatTimeMs, score, success }
    */
@@ -162,36 +164,52 @@ const LB = {
 
     box.innerHTML = '<p class="lb-loading">온라인 순위를 불러오는 중...</p>';
 
-    const sub = await this.submit({
-      nick: (info.nick || '이름 없음').slice(0, 12),
-      difficulty: info.difficulty,
-      reaction_ms: Math.round(info.reactionMs),
-      seat_time_ms: info.seatTimeMs == null ? null : Math.round(info.seatTimeMs),
-      score: info.score == null ? null : Math.round(info.score * 10) / 10,
-      success: !!info.success
-    });
-    if (!sub.ok) { this.renderError(box, sub); return; }
+    const hasScore = info.reactionMs != null && isFinite(info.reactionMs);
+    const myNick = (info.nick || '이름 없음').slice(0, 12);
+
+    // readOnly: 메뉴에서 바로 들어왔을 때(openStandalone) 쓴다.
+    // 이전에 완료한 판의 기록으로 순위만 조회할 뿐, 매번 다시 등록하면
+    // 화면을 열 때마다 같은 판이 중복으로 쌓인다.
+    let sub = { ok: true };
+    if (hasScore && !info.readOnly) {
+      sub = await this.submit({
+        nick: myNick,
+        difficulty: info.difficulty,
+        reaction_ms: Math.round(info.reactionMs),
+        seat_time_ms: info.seatTimeMs == null ? null : Math.round(info.seatTimeMs),
+        score: info.score == null ? null : Math.round(info.score * 10) / 10,
+        success: !!info.success
+      });
+      if (!sub.ok) { this.renderError(box, sub); return; }
+    }
 
     const totalRes = await this.count(c, '');
     if (!totalRes.ok) { this.renderError(box, totalRes); return; }
-
-    const fasterRes = await this.count(c, `&reaction_ms=lt.${Math.round(info.reactionMs)}`);
-    const boardRes = await this.board(c, 10);
-
     const total = totalRes.total;
-    const rank = fasterRes.ok ? fasterRes.total + 1 : null;
-    const pct = (rank != null && total) ? rank / total * 100 : null;
+
+    let rank = null, pct = null;
+    if (hasScore) {
+      const fasterRes = await this.count(c, `&reaction_ms=lt.${Math.round(info.reactionMs)}`);
+      rank = fasterRes.ok ? fasterRes.total + 1 : null;
+      pct = (rank != null && total) ? rank / total * 100 : null;
+    }
+
+    const boardRes = await this.board(c, 10);
 
     box.innerHTML = '';
     const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
 
+    const mainBlock = hasScore
+      ? `<div class="lb-lab">전체 참가자 중 순위</div>
+         <div class="lb-rank"><b>${rank == null ? '—' : u.n(rank)}</b><span>/ ${u.n(total)}위</span></div>
+         <div class="lb-of">반응속도 기준 · 난이도 구분 없음</div>`
+      : `<div class="lb-lab">전체 참가자</div>
+         <div class="lb-rank"><b>${u.n(total)}</b><span>명 등록됨</span></div>
+         <div class="lb-of">연습을 완료하면 여기에 내 순위도 표시됩니다</div>`;
+
     box.appendChild(H(`
       <div class="lb-hero">
-        <div class="lb-main">
-          <div class="lb-lab">전체 참가자 중 순위</div>
-          <div class="lb-rank"><b>${rank == null ? '—' : u.n(rank)}</b><span>/ ${u.n(total)}위</span></div>
-          <div class="lb-of">반응속도 기준 · 난이도 구분 없음</div>
-        </div>
+        <div class="lb-main">${mainBlock}</div>
         ${pct == null ? '' : `
         <div class="lb-side">
           <div class="lb-pct">상위 <b>${TP.rank.fmtPct(pct)}%</b></div>
@@ -203,16 +221,15 @@ const LB = {
         <div class="lb-board" id="lb-board-rows"></div>
       </div>
       <div class="lb-foot">
-        <span>${sub.ok ? '이번 기록이 방금 등록됐습니다.' : ''}</span>
+        <span>${hasScore && !info.readOnly && sub.ok ? '이번 기록이 방금 등록됐습니다.' : (hasScore ? '가장 최근에 완료한 판 기준입니다.' : '')}</span>
         <button type="button" class="btn-link" id="btn-lb-reset">접속 정보 지우기</button>
       </div>`));
 
     const rows = boardRes.ok ? boardRes.rows : [];
     const rb = box.querySelector('#lb-board-rows');
     if (!rows.length) {
-      rb.appendChild(H('<p class="lb-empty">아직 기록이 없습니다. 방금 등록한 이번 판이 최초 기록입니다.</p>'));
+      rb.appendChild(H('<p class="lb-empty">아직 등록된 기록이 없습니다. 연습을 완료하면 첫 기록이 여기 남습니다.</p>'));
     } else {
-      const myNick = (info.nick || '이름 없음').slice(0, 12);
       rows.forEach((r, i) => {
         rb.appendChild(H(`
           <div class="lb-row${r.nick === myNick ? ' me' : ''}">
@@ -289,6 +306,39 @@ const LB = {
       this.saveCfg(url, key);
       this.render(box, this._lastInfo);
     };
+  },
+
+  /* ─────────── 메뉴에서 바로 들어가는 화면 ───────────
+     연습을 완료해야만 온라인 랭킹을 볼 수 있으면 접속 설정을 어디서 하는지
+     찾기가 어렵다. 그래서 메뉴에 별도 항목을 두고, 언제든 여기서 연결하고
+     전체 랭킹을 볼 수 있게 한다. 가장 최근에 저장된 로컬 기록이 있으면
+     그 반응속도로 내 순위도 같이 보여준다 — 없으면 순위판만 보여준다. */
+  openStandalone() {
+    TP.ui.show('online-rank');
+    const btn = document.getElementById('btn-online-home');
+    if (btn) {
+      btn.onclick = () => {
+        if (TP.App && TP.App.goHome) TP.App.goHome();
+        else TP.ui.show('home');
+      };
+    }
+
+    const box = document.getElementById('lb-standalone-box');
+    if (!box) return;
+
+    const hist = (TP.store && TP.store.load) ? TP.store.load() : [];
+    const last = hist.find((r) => r.reaction != null && isFinite(r.reaction));
+    const nick = (TP.rank && TP.rank.player ? TP.rank.player() : '') || '이름 없음';
+
+    this.render(box, {
+      nick,
+      difficulty: last ? last.difficulty : null,
+      reactionMs: last ? last.reaction : null,
+      seatTimeMs: last ? last.seatTime : null,
+      score: last ? last.score : null,
+      success: last ? last.success : false,
+      readOnly: true
+    });
   }
 };
 

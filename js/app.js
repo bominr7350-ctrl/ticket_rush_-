@@ -206,6 +206,7 @@ const App = {
         if (!this.leaveGuard()) return;
         const go = item.dataset.go;
         if (go === 'drill') TP.Drill.open();
+        else if (go === 'online') TP.Leaderboard.openStandalone();
         else this.goHome();
       });
     });
@@ -226,7 +227,8 @@ const App = {
   paintMenu() {
     const q = (sel) => !!document.querySelector(sel);
     const active =
-      q('#screen-cd-setup.active, #screen-cd-run.active, #screen-cd-result.active') ? 'drill' : 'home';
+      q('#screen-cd-setup.active, #screen-cd-run.active, #screen-cd-result.active') ? 'drill' :
+      q('#screen-online-rank.active') ? 'online' : 'home';
     u.$$('.menu-item').forEach(i => i.classList.toggle('on', i.dataset.go === active));
   },
 
