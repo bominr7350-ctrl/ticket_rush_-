@@ -949,3 +949,71 @@ input{font-family:inherit}
   .drill-wrap{padding:18px 16px 60px}
   .dr-live{width:100%;justify-content:space-between}
 }
+
+/* ═══════════ 온라인 랭킹 (Supabase) ═══════════ */
+.lb-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.lb-loading{color:var(--muted);font-size:12.5px;text-align:center;padding:20px 0}
+
+.lb-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.lb-main{flex:1;min-width:160px}
+.lb-lab{font-size:11.5px;font-weight:700;letter-spacing:.05em;color:var(--muted)}
+.lb-rank{display:flex;align-items:baseline;gap:4px;margin-top:4px}
+.lb-rank b{
+  font-family:var(--mono);font-size:34px;font-weight:800;letter-spacing:-.02em;
+  background:linear-gradient(180deg,#fff,var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lb-rank span{font-size:13px;font-weight:700;color:var(--text-2)}
+.lb-of{font-size:11px;color:var(--muted);margin-top:3px}
+.lb-side{min-width:140px}
+.lb-pct{font-size:13.5px;color:var(--text-2);font-weight:600}
+.lb-pct b{font-size:19px;color:var(--purple);font-family:var(--mono)}
+.lb-gauge{height:8px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:7px}
+.lb-gauge i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--purple),#ec9ffb)}
+
+.lb-boardwrap{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.lb-boardhead{font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin-bottom:9px}
+.lb-board{display:flex;flex-direction:column;gap:3px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:6px;font-size:12.5px}
+.lb-row.me{background:rgba(169,120,255,.14);border:1px solid rgba(169,120,255,.4);font-weight:700}
+.lb-r{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:44px;flex:0 0 auto;text-align:right}
+.lb-row.me .lb-r{color:#cbb0ff}
+.lb-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);display:flex;align-items:baseline;gap:7px}
+.lb-row.me .lb-n{color:var(--text)}
+.lb-n em{font-style:normal;font-size:10px;color:var(--muted);background:var(--surface-3);padding:1px 6px;border-radius:4px;flex:0 0 auto}
+.lb-t{font-family:var(--mono);font-size:12px;flex:0 0 auto}
+.lb-empty{color:var(--muted);font-size:12px;text-align:center;padding:10px 0}
+
+.lb-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:var(--muted)}
+
+.lb-fix{
+  padding:14px 16px;border-radius:var(--radius-s);
+  background:var(--bg-2);border:1px solid rgba(255,176,32,.34);border-left:3px solid var(--amber);
+}
+.lb-fix > b{display:block;font-size:12.5px;color:#ffd27d}
+.lb-fix > span{display:block;font-size:11.5px;color:var(--muted);margin-top:9px;line-height:1.6}
+.lb-fix-actions{display:flex;align-items:center;gap:12px;margin-top:11px}
+
+/* 온라인 랭킹 최초 연결 안내 (결과 화면 안에 뜨는 설정 박스) */
+.svc-setup{padding:2px}
+.svc-setup h2{font-size:16px}
+.svc-lead{font-size:12.5px;color:var(--text-2);line-height:1.7;margin-top:7px}
+.svc-steps{margin:15px 0 4px;padding-left:20px;font-size:12.5px;color:var(--text-2);line-height:1.7}
+.svc-steps li{margin-bottom:11px}
+.svc-steps b{color:var(--text)}
+.svc-hint{font-size:11px;color:var(--muted);line-height:1.6}
+.svc-hint b{color:#ffb3ba}
+.svc-sql{
+  margin-top:8px;padding:12px 13px;border-radius:var(--radius-s);
+  background:var(--bg-2);border:1px solid var(--border);
+  font-family:var(--mono);font-size:10.5px;line-height:1.6;color:var(--text-2);
+  white-space:pre;overflow-x:auto;
+}
+.svc-field{display:block;margin-top:12px}
+.svc-field span{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px}
+.svc-field input{
+  width:100%;padding:11px 13px;font-size:12.5px;font-family:var(--mono);
+  background:var(--bg-2);border:1.5px solid var(--border);border-radius:var(--radius-s);
+  color:var(--text);outline:none;transition:.16s;
+}
+.svc-field input:focus{border-color:var(--accent)}
+.svc-setup .btn-primary{width:100%;margin-top:14px}

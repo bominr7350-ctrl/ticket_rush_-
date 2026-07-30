@@ -1161,7 +1161,14 @@ const App = {
 
     this.phase = 'result';
     ui.topbar(false);
-    this.renderResult(analysis, r, ranking);
+    this.renderResult(analysis, r, ranking, {
+      nick: player,
+      difficulty: this.cfg.difficulty.name,
+      reactionMs: r.reactionMs,
+      seatTimeMs: r.seatTimeMs,
+      score: analysis.overallScore,
+      success: success
+    });
     ui.show('result');
   },
 
@@ -1271,7 +1278,7 @@ const App = {
     }
   },
 
-  renderResult(a, run, rank) {
+  renderResult(a, run, rank, lbInfo) {
     const wrap = $('#result-wrap');
     wrap.textContent = '';
     const H = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
@@ -1309,8 +1316,16 @@ const App = {
         </div>
       </div>`));
 
-    /* 기록 랭킹 — 실제 저장된 기록만 비교한다 */
+    /* 기록 랭킹 — 실제 저장된 기록만 비교한다 (이 브라우저 안에서) */
     if (rank && rank.measured) this.renderRank(wrap, rank, H);
+
+    /* 온라인 랭킹 — Supabase 연결이 있어야 다른 사람과 비교된다.
+       연결이 없으면 박스 안에서 연결 안내가 뜬다. */
+    if (lbInfo && lbInfo.reactionMs != null && isFinite(lbInfo.reactionMs) && TP.Leaderboard) {
+      const lbSec = H(`<div class="rs-section"><h3>온라인 랭킹</h3><div class="lb-box" id="lb-box"></div></div>`);
+      wrap.appendChild(lbSec);
+      TP.Leaderboard.render($('#lb-box', lbSec), lbInfo);
+    }
 
     /* 레이더 + 지표 */
     const two = H(`
