@@ -1070,6 +1070,18 @@ input{font-family:inherit}
 .svc-field input:focus{border-color:var(--accent)}
 .svc-setup .btn-primary{width:100%;margin-top:14px}
 
+/* ═══════════ 실시간 대결 (방 코드) ═══════════ */
+.dv-join-row{display:flex;gap:7px}
+.dv-code-input{
+  flex:1;min-width:0;padding:10px 12px;font-family:var(--mono);font-size:14px;
+  letter-spacing:.1em;text-transform:uppercase;
+  background:var(--bg-2);border:1.5px solid var(--border-2);border-radius:var(--radius-s);
+  color:var(--text);outline:none;transition:.16s;
+}
+.dv-code-input:focus{border-color:var(--accent)}
+.btn-primary.urgent-pulse{animation:urgentPulse .5s infinite}
+@keyframes urgentPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
 /* ═══════════ PWA 설치 버튼 · iOS 안내 ═══════════ */
 .install-btn{margin-top:22px;font-size:13.5px;padding:11px 22px}
 .ios-hint{
