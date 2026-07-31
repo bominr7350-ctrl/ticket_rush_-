@@ -27,6 +27,7 @@ const App = {
     this.renderHome();
     this.bindHome();
     this.bindMenu();
+    this.bindTheme();
     this.bindGlobal();
     T.detectPointer();
     if (!T.hasMouse) {
@@ -210,6 +211,34 @@ const App = {
         else this.goHome();
       });
     });
+  },
+
+  /* ─────────── 라이트/다크 테마 ───────────
+     기본값은 라이트. index.html 의 인라인 스크립트가 페인트 전에 먼저
+     data-theme 를 정해두므로, 여기서는 그 값에 맞춰 버튼 표시만 맞추고
+     클릭 시 저장 + 반영만 하면 된다. */
+  bindTheme() {
+    const KEY = 'ticketrush.theme';
+    const COLORS = { light: '#f4f5f8', dark: '#0b0d12' };
+    const root = document.documentElement;
+    const meta = $('#meta-theme-color');
+    const buttons = u.$$('.theme-opt');
+
+    const apply = (t) => {
+      root.setAttribute('data-theme', t);
+      if (meta) meta.setAttribute('content', COLORS[t] || COLORS.light);
+      buttons.forEach(b => b.classList.toggle('on', b.dataset.themeVal === t));
+    };
+
+    buttons.forEach(b => {
+      b.onclick = () => {
+        const t = b.dataset.themeVal;
+        try { localStorage.setItem(KEY, t); } catch (e) {}
+        apply(t);
+      };
+    });
+
+    apply(root.getAttribute('data-theme') || 'light');
   },
 
   /* ─────────── 메뉴 안내 말풍선 ───────────

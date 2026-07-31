@@ -6,9 +6,19 @@
 <title>TicketRush — 티켓팅 실전 연습</title>
 <meta name="description" content="대기열 · 보안문자 · 좌석 선점 경쟁 · 서버 지연을 재현하는 티켓팅 실전 연습 시뮬레이터">
 
+<!-- 테마를 CSS/스크립트가 로드되기 전에 최대한 먼저 정해야 깜빡임(FOUC) 없이 뜬다.
+     기본값은 라이트 모드 — 한 번이라도 저장된 선택이 있으면 그걸 우선한다. -->
+<script>
+(function(){
+  var t = 'light';
+  try { t = localStorage.getItem('ticketrush.theme') || 'light'; } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+
 <!-- PWA -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" id="meta-theme-color" content="#f4f5f8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TicketRush">
@@ -44,6 +54,13 @@
     <b>온라인 랭킹</b>
     <i>다른 사람과 순위 비교 · 연결 설정도 여기서 바로</i>
   </button>
+  <div class="menu-theme">
+    <span>화면 테마</span>
+    <div class="theme-switch" id="theme-switch" role="group" aria-label="테마 선택">
+      <button type="button" class="theme-opt" data-theme-val="light">라이트</button>
+      <button type="button" class="theme-opt" data-theme-val="dark">다크</button>
+    </div>
+  </div>
 </nav>
 
 <!-- ══════════ 상단 실시간 상태바 ══════════ -->

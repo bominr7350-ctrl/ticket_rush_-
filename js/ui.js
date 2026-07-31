@@ -5,6 +5,10 @@
 
 const u = TP.u, $ = u.$;
 
+/* 테마에 따라 값이 바뀌는 CSS 변수를 캔버스 그리기 시점에 읽어온다.
+   (--accent 같은 브랜드색은 테마와 무관하게 고정이라 그냥 하드코딩한다) */
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
 const ui = TP.ui = {
 
   /* ─────────── 화면 전환 ─────────── */
@@ -352,6 +356,8 @@ const ui = TP.ui = {
 
     ctx.clearRect(0, 0, size, size);
 
+    const cBorder2 = cssVar('--border-2'), cSurface3 = cssVar('--surface-3'), cMuted = cssVar('--muted'), cText2 = cssVar('--text-2');
+
     // 격자
     for (let g = 1; g <= 4; g++) {
       ctx.beginPath();
@@ -360,14 +366,14 @@ const ui = TP.ui = {
         i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
       }
       ctx.closePath();
-      ctx.strokeStyle = g === 4 ? '#39424f' : '#252b38';
+      ctx.strokeStyle = g === 4 ? cBorder2 : cSurface3;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
     for (let i = 0; i < n; i++) {
       const [x, y] = pt(i, R);
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y);
-      ctx.strokeStyle = '#252b38'; ctx.stroke();
+      ctx.strokeStyle = cSurface3; ctx.stroke();
     }
 
     // 값
@@ -386,24 +392,24 @@ const ui = TP.ui = {
     axes.forEach((a, i) => {
       const [x, y] = pt(i, R * Math.max(a.score, 3) / 100);
       ctx.beginPath(); ctx.arc(x, y, 3.4, 0, 7);
-      ctx.fillStyle = a.measured ? '#ff4757' : '#6f7b90';
+      ctx.fillStyle = a.measured ? '#ff4757' : cMuted;
       ctx.fill();
     });
 
     // 라벨
     ctx.font = '600 11.5px -apple-system,"Malgun Gothic",sans-serif';
-    ctx.fillStyle = '#a9b4c6';
+    ctx.fillStyle = cText2;
     axes.forEach((a, i) => {
       const [x, y] = pt(i, R + 24);
       ctx.textAlign = Math.abs(x - cx) < 6 ? 'center' : x > cx ? 'left' : 'right';
       ctx.textBaseline = 'middle';
       ctx.fillText(a.label, x - (ctx.textAlign === 'left' ? 6 : ctx.textAlign === 'right' ? -6 : 0), y);
       if (a.measured) {
-        ctx.fillStyle = '#6f7b90';
+        ctx.fillStyle = cMuted;
         ctx.font = '600 10px ui-monospace,monospace';
         ctx.fillText(Math.round(a.score), x - (ctx.textAlign === 'left' ? 6 : ctx.textAlign === 'right' ? -6 : 0), y + 13);
         ctx.font = '600 11.5px -apple-system,"Malgun Gothic",sans-serif';
-        ctx.fillStyle = '#a9b4c6';
+        ctx.fillStyle = cText2;
       }
     });
   },
@@ -432,6 +438,8 @@ const ui = TP.ui = {
                            : padL + i / (n - 1) * (W - padL - padR);
     const Y = v => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
 
+    const cSurface3 = cssVar('--surface-3'), cMuted = cssVar('--muted');
+
     /* 가로 기준선 */
     ctx.font = '500 10px ui-monospace,monospace';
     ctx.textAlign = 'right';
@@ -441,8 +449,8 @@ const ui = TP.ui = {
       const y = Y(v);
       ctx.beginPath();
       ctx.moveTo(padL, y); ctx.lineTo(W - padR, y);
-      ctx.strokeStyle = '#252b38'; ctx.lineWidth = 1; ctx.stroke();
-      ctx.fillStyle = '#6f7b90';
+      ctx.strokeStyle = cSurface3; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = cMuted;
       ctx.fillText(TP.u.ms(v), padL - 7, y);
     }
 
@@ -483,7 +491,7 @@ const ui = TP.ui = {
     ctx.textBaseline = 'top';
     if (n > 1) {
       ctx.textAlign = 'left';
-      ctx.fillStyle = '#6f7b90';
+      ctx.fillStyle = cMuted;
       ctx.fillText('지난 연습', padL, H - padB + 8);
     }
     ctx.textAlign = 'right';
@@ -506,7 +514,7 @@ const ui = TP.ui = {
     const ox = (W - vw * s) / 2, oy = (H - vh * s) / 2;
     const X = x => ox + x * s, Y = y => oy + y * s;
 
-    ctx.strokeStyle = '#2a3140';
+    ctx.strokeStyle = cssVar('--border');
     ctx.strokeRect(X(0), Y(0), vw * s, vh * s);
 
     // 시간이 흐를수록 색이 변해 어느 순간에 헤맸는지 보이게 한다
