@@ -51,16 +51,20 @@ alter table public.duel_players enable row level security;
 drop policy if exists "anyone can read rooms" on public.duel_rooms;
 drop policy if exists "anyone can insert rooms" on public.duel_rooms;
 drop policy if exists "anyone can update rooms" on public.duel_rooms;
+drop policy if exists "anyone can delete rooms" on public.duel_rooms;
 create policy "anyone can read rooms" on public.duel_rooms for select using (true);
 create policy "anyone can insert rooms" on public.duel_rooms for insert with check (true);
 create policy "anyone can update rooms" on public.duel_rooms for update using (true);
+create policy "anyone can delete rooms" on public.duel_rooms for delete using (true);
 
 drop policy if exists "anyone can read players" on public.duel_players;
 drop policy if exists "anyone can insert players" on public.duel_players;
 drop policy if exists "anyone can update players" on public.duel_players;
+drop policy if exists "anyone can delete players" on public.duel_players;
 create policy "anyone can read players" on public.duel_players for select using (true);
 create policy "anyone can insert players" on public.duel_players for insert with check (true);
-create policy "anyone can update players" on public.duel_players for update using (true);`;
+create policy "anyone can update players" on public.duel_players for update using (true);
+create policy "anyone can delete players" on public.duel_players for delete using (true);`;
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 0·O·1·I·L 제외 (보안문자와 같은 이유)
 
@@ -276,7 +280,7 @@ const Duel = {
         const joinRes = await this.insertPlayer(c, code, nick);
         this.setBusy(false);
         if (!joinRes.ok) return this.showError(joinRes);
-        return this.enterRoom(code, joinRes.id, nick);
+        return this.enterRoom(code, joinRes.id, nick, true);
       }
       let j = null;
       try { j = JSON.parse(text); } catch (e) {}
@@ -304,7 +308,7 @@ const Duel = {
       const joinRes = await this.insertPlayer(c, code, nick);
       this.setBusy(false);
       if (!joinRes.ok) return this.showError(joinRes);
-      this.enterRoom(code, joinRes.id, nick);
+      this.enterRoom(code, joinRes.id, nick, false);
     } catch (e) {
       this.setBusy(false);
       this.showError({ kind: 'net', text: '연결할 수 없습니다. 인터넷 연결을 확인해 주세요.' });
@@ -312,9 +316,9 @@ const Duel = {
   },
 
   /* ─────────── 로비(대기실) ─────────── */
-  enterRoom(code, playerId, nick) {
+  enterRoom(code, playerId, nick, isHost) {
     this.stopHomePoll();
-    this.room = { code, playerId, nick, players: [], status: 'lobby', startAt: null };
+    this.room = { code, playerId, nick, isHost: !!isHost, players: [], status: 'lobby', startAt: null };
     this.renderLobby();
     this.startLobbyPoll();
   },
@@ -443,9 +447,23 @@ const Duel = {
   },
 
   leaveRoom() {
-    // 나가기: 서버 쪽 참가자 행은 그대로 두되(정리용 크론이 없어도 게임엔 지장 없음),
-    // 이 클라이언트는 폴링을 멈추고 화면만 빠져나간다.
+    // 방장이 나가면 방 자체를 지운다 (duel_players 는 room_code 외래키에
+    // on delete cascade 가 걸려 있어 참가자 행도 같이 정리된다).
+    // 방장이 아니면 서버 쪽 참가자 행은 그대로 두고 이 클라이언트만 빠져나간다
+    // — 정리용 크론이 없어도 남은 사람들의 대결 진행에는 지장 없다.
+    if (this.room && this.room.isHost) this.deleteRoom();
     this.exit();
+  },
+
+  async deleteRoom() {
+    if (!this.room || !this.room.code) return;
+    const c = TP.Leaderboard.cfg();
+    try {
+      await fetch(`${c.url}/rest/v1/duel_rooms?code=eq.${enc(this.room.code)}`, {
+        method: 'DELETE',
+        headers: Object.assign({}, TP.Leaderboard.headers(c), { Prefer: 'return=minimal' })
+      });
+    } catch (e) {}
   },
 
   /* ─────────── 카운트다운 · 클릭 대결 ─────────── */
@@ -625,5 +643,19 @@ const Duel = {
 };
 
 TP.Duel = Duel;
+
+/* 방장이 나가기 버튼 대신 탭을 그냥 닫거나 새로고침해도 방이 남지 않도록 처리.
+   keepalive 로 언로드 중에도 요청이 끝까지 나가게 한다. */
+window.addEventListener('pagehide', () => {
+  if (!Duel.room || !Duel.room.isHost || !Duel.room.code) return;
+  const c = TP.Leaderboard.cfg();
+  try {
+    fetch(`${c.url}/rest/v1/duel_rooms?code=eq.${enc(Duel.room.code)}`, {
+      method: 'DELETE',
+      headers: Object.assign({}, TP.Leaderboard.headers(c), { Prefer: 'return=minimal' }),
+      keepalive: true
+    });
+  } catch (e) {}
+});
 
 })(window.TP = window.TP || {});
