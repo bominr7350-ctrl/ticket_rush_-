@@ -73,6 +73,7 @@ const Duel = {
     TP.ui.topbar(false);
     if (TP.App && TP.App.hideMenuHint) TP.App.hideMenuHint();
     this.stopPoll();
+    this.stopHomePoll();
     clearTimeout(this._goTimer);
     clearInterval(this._cdTimer);
     this.room = null;
@@ -82,6 +83,7 @@ const Duel = {
 
   exit() {
     this.stopPoll();
+    this.stopHomePoll();
     clearTimeout(this._goTimer);
     clearInterval(this._cdTimer);
     this.room = null;
@@ -90,6 +92,7 @@ const Duel = {
   },
 
   stopPoll() { clearInterval(this._pollTimer); this._pollTimer = null; },
+  stopHomePoll() { clearInterval(this._homePollTimer); this._homePollTimer = null; },
 
   genCode() {
     let s = '';
@@ -155,14 +158,23 @@ const Duel = {
           온라인 랭킹과 같은 서버를 쓰므로 별도 가입은 필요 없습니다.
         </p>
       </div>
-      <div class="opt-grid" style="max-width:640px;margin:0 auto">
+      <div class="panel-block" style="max-width:640px;margin:0 auto">
+        <div class="block-title">
+          <span>지금 열려 있는 방</span>
+          <button class="btn-link" id="btn-duel-refresh" type="button" style="margin-left:auto">새로고침</button>
+        </div>
+        <div class="rk-boardwrap">
+          <div class="rk-board" id="duel-room-list"><p class="lb-loading">불러오는 중...</p></div>
+        </div>
+      </div>
+      <div class="opt-grid" style="max-width:640px;margin:20px auto 0">
         <button class="venue-pick" id="btn-duel-create" type="button">
           <div class="vp-name">방 만들기</div>
           <div class="vp-desc">새 코드를 받아서 친구를 초대합니다.</div>
         </button>
         <div class="venue-pick">
-          <div class="vp-name">코드로 입장</div>
-          <div class="vp-desc" style="margin-bottom:10px">친구에게 받은 코드를 입력하세요.</div>
+          <div class="vp-name">코드로 바로 입장</div>
+          <div class="vp-desc" style="margin-bottom:10px">친구에게 코드를 따로 받았다면 여기에 입력하세요.</div>
           <div class="dv-join-row">
             <input type="text" id="duel-code-input" class="dv-code-input" placeholder="코드 입력" maxlength="6" autocomplete="off" spellcheck="false">
             <button class="btn-primary" id="btn-duel-join" type="button">입장</button>
@@ -176,6 +188,53 @@ const Duel = {
     $('#btn-duel-create', box).onclick = () => this.createRoom();
     $('#btn-duel-join', box).onclick = () => this.joinRoom($('#duel-code-input', box).value);
     $('#duel-code-input', box).onkeydown = e => { if (e.key === 'Enter') this.joinRoom(e.target.value); };
+    $('#btn-duel-refresh', box).onclick = () => this.refreshRoomList();
+
+    this.refreshRoomList();
+    this.startHomePoll();
+  },
+
+  startHomePoll() {
+    this.stopHomePoll();
+    this._homePollTimer = setInterval(() => this.refreshRoomList(), 2500);
+  },
+
+  /** 최근 30분 안에 만들어진, 아직 시작하지 않은 방만 보여준다 (정리 크론이 없어 오래된 방은 숨김) */
+  async refreshRoomList() {
+    const listEl = $('#duel-room-list');
+    if (!listEl) return;
+    const c = TP.Leaderboard.cfg();
+    const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    try {
+      const res = await fetch(
+        `${c.url}/rest/v1/duel_rooms?status=eq.lobby&created_at=gt.${enc(since)}&select=code,host_nick,created_at&order=created_at.desc&limit=15`,
+        { headers: TP.Leaderboard.headers(c) }
+      );
+      // 자세한 오류는 만들기/입장을 실제로 시도할 때 보여준다 — 여기서는 목록을 그냥 빈 상태로 둔다
+      this.renderRoomList(res.ok ? await res.json() : []);
+    } catch (e) {
+      this.renderRoomList([]);
+    }
+  },
+
+  renderRoomList(rooms) {
+    const listEl = $('#duel-room-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
+    if (!rooms.length) {
+      listEl.appendChild(H('<p class="lb-empty">지금 열려 있는 방이 없습니다. 방을 만들어서 친구를 초대해 보세요.</p>'));
+      return;
+    }
+    rooms.forEach(r => {
+      const row = H(`
+        <div class="rk-row">
+          <span class="rk-n">${TP.Leaderboard.esc(r.host_nick || '이름 없음')}님의 방 · <span style="font-family:var(--mono);color:var(--muted)">${TP.Leaderboard.esc(r.code)}</span></span>
+          <button class="btn-ghost" type="button">입장</button>
+        </div>`);
+      row.querySelector('button').onclick = () => this.joinRoom(r.code);
+      listEl.appendChild(row);
+    });
   },
 
   async insertPlayer(c, code, nick) {
@@ -254,6 +313,7 @@ const Duel = {
 
   /* ─────────── 로비(대기실) ─────────── */
   enterRoom(code, playerId, nick) {
+    this.stopHomePoll();
     this.room = { code, playerId, nick, players: [], status: 'lobby', startAt: null };
     this.renderLobby();
     this.startLobbyPoll();
