@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>개인정보처리방침 — TicketRush</title>
+<meta name="description" content="TicketRush가 수집하는 정보와 이용 방법을 안내합니다.">
+
+<script>
+(function(){
+  var t = 'light';
+  try { t = localStorage.getItem('ticketrush.theme') || 'light'; } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=3">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<main id="stage">
+  <section class="screen active">
+    <div class="doc-wrap">
+      <a class="drill-back" href="./">← TicketRush로 돌아가기</a>
+
+      <h1 class="doc-title">개인정보처리방침</h1>
+      <p class="doc-updated">최종 수정일: 2026년 8월 3일</p>
+
+      <p class="doc-lead">
+        TicketRush(이하 "서비스")는 티켓 예매 상황을 재현해 연습할 수 있게 해주는 개인 연습용 도구입니다.
+        서비스는 회원가입을 요구하지 않으며, 이름·전화번호·주소·결제수단 같은 실제 개인정보를
+        수집하지 않습니다. 이 문서는 서비스가 어떤 정보를 저장하고 어떻게 쓰는지 설명합니다.
+      </p>
+
+      <h2>1. 이 기기에만 저장되는 정보</h2>
+      <p>
+        아래 항목은 <b>이용자의 브라우저(localStorage) 안에만</b> 저장되며 서버로 전송되지 않습니다.
+        브라우저 데이터를 삭제하면 함께 사라집니다.
+      </p>
+      <ul>
+        <li>연습 기록 — 반응속도, 좌석 선택 시간, 점수, 성공 여부, 난이도</li>
+        <li>보안문자 연습 기록 — 문제당 소요시간, 정답률</li>
+        <li>이용자가 직접 입력한 <b>표시용 닉네임</b></li>
+        <li>화면 테마(라이트/다크) 선택값</li>
+      </ul>
+
+      <h2>2. 온라인 랭킹 · 실시간 대결에 전송되는 정보</h2>
+      <p>
+        이용자가 <b>온라인 랭킹</b> 또는 <b>실시간 대결</b> 기능을 사용할 때에 한해, 아래 정보가
+        데이터베이스 서비스(Supabase)로 전송·저장됩니다. 이 기능을 쓰지 않으면 아무것도 전송되지 않습니다.
+      </p>
+      <ul>
+        <li>이용자가 입력한 표시용 닉네임 (실명일 필요가 없으며 임의로 정할 수 있습니다)</li>
+        <li>반응속도, 좌석 선택 시간, 점수, 성공 여부, 난이도</li>
+        <li>실시간 대결 시 방 코드와 참가·기록 시각</li>
+      </ul>
+      <p>
+        닉네임은 순위표에 다른 이용자에게 <b>공개</b>됩니다. 실명이나 알아볼 수 있는 정보를
+        넣지 않기를 권장합니다.
+      </p>
+
+      <h2>3. 광고</h2>
+      <p>
+        서비스는 향후 Google AdSense 광고를 게재할 수 있습니다. Google을 포함한 제3자 광고 사업자는
+        쿠키를 사용하여 이용자의 이전 방문 기록을 바탕으로 광고를 게재할 수 있습니다.
+      </p>
+      <p>
+        이용자는 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google 광고 설정</a>에서
+        맞춤 광고를 해제할 수 있으며,
+        <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener">www.aboutads.info</a>에서
+        제3자 사업자의 쿠키 사용을 거부할 수 있습니다.
+      </p>
+
+      <h2>4. 하지 않는 것</h2>
+      <ul>
+        <li>실제 예매처와 통신하지 않으며, 자동화·매크로 기능을 제공하지 않습니다.</li>
+        <li>결제 정보를 수집하지 않습니다. 결제 화면은 연습용 재현이며 실제 결제가 일어나지 않습니다.</li>
+        <li>수집한 정보를 판매하거나 광고 목적으로 제3자에게 제공하지 않습니다.</li>
+      </ul>
+
+      <h2>5. 보관 기간과 삭제 방법</h2>
+      <ul>
+        <li><b>기기 내 기록</b> — 홈 화면의 기록 초기화 버튼, 또는 브라우저 데이터 삭제로 지울 수 있습니다.</li>
+        <li><b>온라인 랭킹 기록</b> — 서비스 운영 기간 동안 보관됩니다. 삭제를 원하시면 아래 연락처로
+            닉네임과 함께 요청해 주세요.</li>
+        <li><b>실시간 대결 방</b> — 방을 만든 사람이 나가면 즉시 삭제됩니다.</li>
+      </ul>
+
+      <h2>6. 만 14세 미만 이용자</h2>
+      <p>
+        서비스는 만 14세 미만 아동을 대상으로 하지 않으며, 해당 연령의 개인정보를 의도적으로
+        수집하지 않습니다.
+      </p>
+
+      <h2>7. 방침 변경</h2>
+      <p>
+        본 방침이 변경되면 이 페이지에 수정된 내용과 최종 수정일을 게시합니다.
+      </p>
+
+      <h2>8. 문의</h2>
+      <p>
+        개인정보 관련 문의나 기록 삭제 요청은 아래로 연락해 주세요.<br>
+        <b>bominr7350@gmail.com</b>
+      </p>
+
+      <p class="disclaimer" style="text-align:left;margin-top:32px">
+        본 서비스는 개인이 만든 연습용 시뮬레이터이며, 특정 예매처나 공연 기획사와 아무런 관련이 없습니다.
+        등장하는 공연명·공연장·좌석 정보는 모두 가상입니다.
+      </p>
+
+      <a class="drill-back" href="./" style="margin-top:8px;display:inline-block">← TicketRush로 돌아가기</a>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>

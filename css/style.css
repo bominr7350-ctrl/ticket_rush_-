@@ -1070,6 +1070,38 @@ input{font-family:inherit}
 .svc-field input:focus{border-color:var(--accent)}
 .svc-setup .btn-primary{width:100%;margin-top:14px}
 
+/* ═══════════ 문서 페이지 (개인정보처리방침 등) ═══════════ */
+.doc-wrap{max-width:760px;margin:0 auto;padding:32px 24px 80px}
+.doc-title{font-size:clamp(24px,4vw,32px);font-weight:800;letter-spacing:-.02em;margin-top:18px}
+.doc-updated{font-size:12px;color:var(--muted);margin-top:6px}
+.doc-lead{
+  margin-top:20px;padding:16px 18px;border-radius:var(--radius-s);
+  background:var(--surface);border:1px solid var(--border);
+  font-size:13.5px;color:var(--text-2);line-height:1.8;
+}
+.doc-wrap h2{
+  font-size:16px;font-weight:700;margin-top:30px;margin-bottom:10px;
+  display:flex;align-items:center;gap:9px;
+}
+.doc-wrap h2::before{content:"";width:3px;height:15px;background:var(--accent);border-radius:2px}
+.doc-wrap p{font-size:13.5px;color:var(--text-2);line-height:1.85;margin-bottom:10px}
+.doc-wrap ul{margin:4px 0 10px;padding-left:20px}
+.doc-wrap li{font-size:13.5px;color:var(--text-2);line-height:1.85;margin-bottom:5px}
+.doc-wrap b{color:var(--text);font-weight:700}
+.doc-wrap a{color:var(--blue)}
+
+/* ═══════════ 사이트 하단 (푸터) ═══════════ */
+.site-foot{
+  max-width:940px;margin:0 auto;padding:26px 24px 60px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;flex-wrap:wrap;
+}
+.site-foot p{font-size:11.5px;color:var(--muted);line-height:1.7}
+.site-foot nav{display:flex;gap:16px;flex-wrap:wrap}
+.site-foot a{font-size:12px;color:var(--text-2);text-decoration:none;font-weight:600}
+.site-foot a:hover{color:var(--accent);text-decoration:underline}
+
 /* ═══════════ 실시간 대결 (방 코드) ═══════════ */
 .dv-join-row{display:flex;gap:7px}
 .dv-code-input{
