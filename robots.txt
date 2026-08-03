@@ -1,8 +1,9 @@
 # TicketRush — 검색엔진 수집 규칙
-# 모든 페이지를 공개한다. 로그인이나 비공개 영역이 없다.
+# 관리자 통계 화면(admin.html)만 빼고 모두 공개한다.
 
 User-agent: *
 Allow: /
+Disallow: /admin.html
 
 # 네이버 검색로봇
 User-agent: Yeti

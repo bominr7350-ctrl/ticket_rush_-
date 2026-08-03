@@ -14,7 +14,7 @@
      훨씬 끈질기게 옛 버전을 물고 있으니 각별히 주의할 것.
    ═══════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v12';
 const CACHE = `ticketrush-${CACHE_VERSION}`;
 
 /* 오프라인에서도 앱이 뜨도록 미리 받아두는 파일들 */
@@ -25,6 +25,7 @@ const PRECACHE_URLS = [
   './manifest.webmanifest',
   './css/style.css',
   './js/core.js',
+  './js/sb.js',
   './js/data.js',
   './js/telemetry.js',
   './js/captcha.js',
@@ -38,6 +39,7 @@ const PRECACHE_URLS = [
   './js/app.js',
   './js/drill.js',
   './js/pwa.js',
+  './js/track.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-192.png',

@@ -22,9 +22,10 @@ const K_URL = 'ticketrush.lb.url';
 const K_KEY = 'ticketrush.lb.key';
 
 /* 사이트 공용 랭킹 서버(Supabase, anon public 키 — 공개돼도 되는 키).
-   기기마다 따로 입력하지 않아도 모두 같은 랭킹을 보게 하는 기본값. */
-const DEFAULT_URL = 'https://kqzwoocompjuulbdvybm.supabase.co';
-const DEFAULT_KEY = 'sb_publishable_LG7CmxKpctuTGcV5C4wXQw_MjOphvbv';
+   기기마다 따로 입력하지 않아도 모두 같은 랭킹을 보게 하는 기본값.
+   주소·키의 원본은 js/sb.js 한 곳에만 둔다. */
+const DEFAULT_URL = TP.SB.URL;
+const DEFAULT_KEY = TP.SB.KEY;
 
 const SETUP_SQL =
 `create table if not exists public.scores (

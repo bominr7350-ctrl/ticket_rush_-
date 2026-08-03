@@ -24,12 +24,16 @@ const SID_KEY  = 'ticketrush.sid';    // sessionStorage — 탭 단위
 const SEEN_KEY = 'ticketrush.seen';   // localStorage  — 재방문 판별
 const PING_MS  = 45000;
 
-/* 개발 중 접속은 통계에서 뺀다 */
+/* 개발 중 접속은 통계에서 뺀다.
+   배포 전에 계측이 실제로 도는지 확인하고 싶으면 주소 뒤에 ?track=1 을 붙인다
+   (예: http://localhost:8777/?track=1). 그때만 로컬에서도 서버로 보낸다. */
 const host = location.hostname;
-const DISABLED =
+const FORCED = /(?:^|[?&])track=1(?:&|$)/.test(location.search);
+const DISABLED = !FORCED && (
   location.protocol === 'file:' ||
   host === 'localhost' || host === '127.0.0.1' || host === '::1' ||
-  /^192\.168\./.test(host) || /^10\./.test(host);
+  /^192\.168\./.test(host) || /^10\./.test(host)
+);
 
 const Track = {
   sid: null,
