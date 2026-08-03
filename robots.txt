@@ -1,0 +1,15 @@
+# TicketRush — 검색엔진 수집 규칙
+# 모든 페이지를 공개한다. 로그인이나 비공개 영역이 없다.
+
+User-agent: *
+Allow: /
+
+# 네이버 검색로봇
+User-agent: Yeti
+Allow: /
+
+# 다음(카카오) 검색로봇
+User-agent: Daum
+Allow: /
+
+Sitemap: https://ticketrush.win/sitemap.xml
