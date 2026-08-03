@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>관리자 — TicketRush</title>
+<meta name="robots" content="noindex, nofollow">
+
+<script>
+(function(){
+  var t = 'light';
+  try { t = localStorage.getItem('ticketrush.theme') || 'light'; } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=3">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="adm">
+
+  <!-- ─────────── 관리자 토큰 입력 · 최초 설정 안내 ─────────── -->
+  <section id="adm-gate" class="adm-gate">
+    <h1 class="adm-gate-title">TicketRush 관리자</h1>
+    <p class="adm-gate-lead">
+      방문 통계를 보려면 Supabase 에 넣어둔 <b>관리자 토큰</b>이 필요합니다.
+      토큰은 이 브라우저에만 저장되며 서버로 저장되지 않습니다.
+    </p>
+
+    <label class="adm-field">
+      <span>관리자 토큰</span>
+      <input type="password" id="adm-token" placeholder="영문·숫자·하이픈 8자 이상"
+             autocomplete="off" spellcheck="false">
+    </label>
+    <button class="btn-primary" id="adm-enter">통계 열기</button>
+    <p class="adm-gate-err hidden" id="adm-gate-err"></p>
+
+    <details class="adm-setup">
+      <summary>아직 준비가 안 됐나요? — 처음 한 번만 하는 설정</summary>
+      <ol class="adm-steps">
+        <li>Supabase 대시보드 → <b>SQL Editor</b> 를 엽니다.</li>
+        <li>아래 SQL 을 붙여넣고 실행합니다. 위 칸에 토큰을 먼저 입력하면
+            <b>그 토큰이 들어간 SQL</b> 이 여기에 그대로 만들어집니다.</li>
+        <li>실행이 끝나면 위의 <b>통계 열기</b> 를 누릅니다.</li>
+      </ol>
+      <div class="adm-sqlbar">
+        <button type="button" class="btn-ghost" id="adm-copy-sql">SQL 복사</button>
+      </div>
+      <pre class="adm-sql" id="adm-sql"></pre>
+    </details>
+  </section>
+
+  <!-- ─────────── 대시보드 ─────────── -->
+  <main id="adm-main" class="hidden">
+    <header class="adm-top">
+      <div class="adm-brand">
+        <a href="./" class="adm-home">← 사이트</a>
+        <h1>방문 통계</h1>
+      </div>
+      <div class="adm-controls">
+        <div class="adm-seg" id="adm-range">
+          <button type="button" data-range="24h" class="on">24시간</button>
+          <button type="button" data-range="7d">7일</button>
+          <button type="button" data-range="30d">30일</button>
+          <button type="button" data-range="all">전체</button>
+        </div>
+        <label class="adm-auto"><input type="checkbox" id="adm-auto" checked><span>자동 갱신</span></label>
+        <button type="button" class="btn-ghost adm-sm" id="adm-refresh">새로고침</button>
+        <button type="button" class="btn-link adm-sm" id="adm-logout">토큰 지우기</button>
+      </div>
+    </header>
+
+    <p class="adm-status" id="adm-status">불러오는 중...</p>
+    <div id="adm-body"></div>
+  </main>
+
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/sb.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

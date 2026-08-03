@@ -40,8 +40,16 @@ create table if not exists public.duel_players (
   joined_at    timestamptz not null default now(),
   ready        boolean not null default false,
   reaction_ms  integer,
+  seat_time_ms integer,
+  score        numeric,
+  success      boolean,
   finished_at  timestamptz
 );
+
+-- 이미 표를 만들어 둔 경우를 위한 추가 (한 판 전체를 겨루도록 바뀌면서 늘어난 항목)
+alter table public.duel_players add column if not exists seat_time_ms integer;
+alter table public.duel_players add column if not exists score        numeric;
+alter table public.duel_players add column if not exists success      boolean;
 
 create index if not exists duel_players_room_idx on public.duel_players (room_code);
 
@@ -90,6 +98,10 @@ const Duel = {
     this.stopHomePoll();
     clearTimeout(this._goTimer);
     clearInterval(this._cdTimer);
+    if (this._offFinish) { this._offFinish(); this._offFinish = null; }
+    // 결과 화면에 얹어둔 대결 순위표는 다음 일반 연습에 남으면 안 된다
+    const st = $('#duel-standings');
+    if (st) st.remove();
     this.room = null;
     if (TP.App && TP.App.goHome) TP.App.goHome();
     else TP.ui.show('home');
@@ -112,6 +124,10 @@ const Duel = {
     const pg = (j && j.code) || '';
     const raw = msg ? ` — 서버 메시지: ${msg}` : (body ? ` — ${String(body).slice(0, 140)}` : '');
 
+    // 컬럼 부족은 "스키마 캐시" 문구로도 오므로 캐시 안내보다 먼저 걸러낸다.
+    if (pg === '42703' || /column/i.test(msg)) {
+      return { kind: 'sql', text: '대결 표에 새로 필요한 항목(점수·좌석시간·성공여부)이 아직 없습니다. 아래 SQL 을 한 번 실행해 주세요.' + raw };
+    }
     if (pg === 'PGRST205' || /schema cache/i.test(msg)) {
       return { kind: 'reload', text: 'SQL 은 성공했지만 API 서버가 아직 새 테이블을 인식하지 못했습니다.' + raw };
     }
@@ -466,7 +482,9 @@ const Duel = {
     } catch (e) {}
   },
 
-  /* ─────────── 카운트다운 · 클릭 대결 ─────────── */
+  /* ─────────── 카운트다운 → 전체 연습 한 판 ───────────
+     대결은 버튼 한 번 누르기가 아니라 평소 연습과 똑같은 한 판을 돌린다.
+     대기열 · 보안문자 · 회차 · 좌석 · 결제까지 전부 거치고, 그 결과로 겨룬다. */
   enterRace() {
     if (!this.room) return;
     this.raceSubmitted = false;
@@ -474,19 +492,47 @@ const Duel = {
     this.scheduleGo();
   },
 
+  /* 방 코드를 숫자로 바꾼다(FNV-1a). 참가자 전원이 같은 코드를 갖고 있으므로
+     여기서 나온 시드로 시뮬레이션을 만들면 모두 완전히 같은 판을 받는다. */
+  codeSeed(code) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < code.length; i++) {
+      h ^= code.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  },
+
+  /** 참가자 전원이 같은 공연·같은 조건으로 뛰도록 설정을 맞춘다 */
+  applySharedConfig() {
+    const seed = this.codeSeed(this.room.code);
+    const rng = TP.Rng(seed);
+    const cfg = TP.App.cfg;
+    cfg.concert = TP.CONCERTS[rng.int(0, TP.CONCERTS.length - 1)];
+    cfg.venue = cfg.concert.venue;
+    // 난이도는 '보통'으로 고정한다. 방마다 난이도가 널뛰면 대결이 운에 좌우된다.
+    cfg.difficulty = TP.DIFFS[1] || TP.DIFFS[0];
+    cfg.target = 'any';
+    cfg.opts = { captcha: true, errors: true, refreshLimit: true, countdown: true };
+    return seed;
+  },
+
   renderRaceWaiting() {
     const box = $('#duel-box');
-    box.innerHTML = '';
-    const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
-    box.appendChild(H(`
+    const nice = this.room ? TP.CONCERTS[TP.Rng(this.codeSeed(this.room.code)).int(0, TP.CONCERTS.length - 1)] : null;
+    box.innerHTML = `
       <div class="standby-wrap" style="grid-template-columns:1fr;text-align:center;min-height:auto;padding:60px 24px">
         <div>
           <div class="sb-label">모두 준비 완료 — 곧 시작합니다</div>
           <div class="sb-count" id="duel-count">-</div>
-          <div class="sb-title">신호가 뜨면 최대한 빨리 누르세요</div>
-          <button class="btn-primary btn-huge" id="btn-duel-go" disabled style="margin-top:20px;max-width:320px">대기 중...</button>
+          <div class="sb-title">${nice ? TP.Leaderboard.esc(nice.name) : ''}</div>
+          <p class="sb-meta">
+            지금부터 <b>평소 연습과 똑같은 한 판</b>이 시작됩니다.<br>
+            대기열 · 보안문자 · 회차 · 좌석 · 결제까지 끝내고 점수로 겨룹니다.<br>
+            참가자 전원이 <b>완전히 같은 판</b>을 받습니다.
+          </p>
         </div>
-      </div>`));
+      </div>`;
     this.tickCountdown();
   },
 
@@ -494,7 +540,7 @@ const Duel = {
     const startMs = new Date(this.room.startAt).getTime();
     const wait = Math.max(0, startMs - Date.now());
     clearTimeout(this._goTimer);
-    this._goTimer = setTimeout(() => this.armGo(), wait);
+    this._goTimer = setTimeout(() => this.startPractice(), wait);
     clearInterval(this._cdTimer);
     this._cdTimer = setInterval(() => this.tickCountdown(), 100);
   },
@@ -507,55 +553,97 @@ const Duel = {
     el.classList.toggle('urgent', remain <= 1000);
   },
 
-  armGo() {
+  /** 대결용 한 판을 실제로 시작한다 */
+  startPractice() {
     clearInterval(this._cdTimer);
-    const el = $('#duel-count'); if (el) { el.textContent = 'GO'; el.classList.add('urgent'); }
-    const btn = $('#btn-duel-go');
-    if (!btn) return;
-    btn.disabled = false;
-    btn.textContent = '지금 예매하기!';
-    btn.classList.add('urgent-pulse');
-    btn.onclick = () => this.clickGo();
+    this.stopPoll();                       // 연습 중에는 폴링을 멈춘다
+    if (!this.room) return;
+
+    const seed = this.applySharedConfig();
+
+    // 한 판이 끝나면 결과를 받아 서버에 올린다. 구독은 판마다 한 번만 건다.
+    if (this._offFinish) this._offFinish();
+    this._offFinish = TP.bus.on('run:finish', (res) => {
+      if (this._offFinish) { this._offFinish(); this._offFinish = null; }
+      this.submitResult(res);
+    });
+
+    TP.App.start(seed);
   },
 
-  async clickGo() {
+  async submitResult(res) {
     if (!this.room || this.raceSubmitted) return;
     this.raceSubmitted = true;
-    const reactionMs = Math.max(0, Math.round(Date.now() - new Date(this.room.startAt).getTime()));
-    const btn = $('#btn-duel-go');
-    if (btn) { btn.disabled = true; btn.classList.remove('urgent-pulse'); btn.textContent = `기록 ${TP.u.ms(reactionMs)} · 제출 중...`; }
 
     const c = TP.Leaderboard.cfg();
+    let fail = null;
     try {
-      await fetch(`${c.url}/rest/v1/duel_players?id=eq.${this.room.playerId}`, {
+      const r = await fetch(`${c.url}/rest/v1/duel_players?id=eq.${this.room.playerId}`, {
         method: 'PATCH',
         headers: Object.assign({}, TP.Leaderboard.headers(c), { Prefer: 'return=minimal' }),
-        body: JSON.stringify({ reaction_ms: reactionMs, finished_at: new Date().toISOString() })
+        body: JSON.stringify({
+          reaction_ms:  res.reactionMs == null ? null : Math.round(res.reactionMs),
+          seat_time_ms: res.seatTimeMs == null ? null : Math.round(res.seatTimeMs),
+          score:        res.score == null ? null : Math.round(res.score * 10) / 10,
+          success:      !!res.success,
+          finished_at:  new Date().toISOString()
+        })
       });
-    } catch (e) {}
+      if (!r.ok) fail = this.explain(r.status, await r.text());
+    } catch (e) {
+      fail = { kind: 'net', text: '연결할 수 없습니다. 인터넷 연결을 확인해 주세요.' };
+    }
 
-    this.renderRaceSubmitted(reactionMs);
+    // 결과 화면(App 이 그린 것) 위에 대결 순위표를 얹고, 나머지 참가자를 기다린다.
+    this.mountStandings();
+    if (fail) {
+      // 기록이 서버에 안 올라갔으면 순위를 기다려봐야 소용없다. 이유를 그대로 보여준다.
+      const note = $('#duel-standing-note');
+      if (note) note.innerHTML = `<b style="color:var(--accent-2)">${TP.Leaderboard.esc(fail.text)}</b>`;
+      TP.ui.toast('대결 기록을 서버에 올리지 못했습니다.', 'err', 5000);
+      return;
+    }
     this.startResultPoll();
   },
 
-  renderRaceSubmitted(myMs) {
-    const box = $('#duel-box');
-    box.innerHTML = '';
-    const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
-    box.appendChild(H(`
-      <div style="text-align:center;max-width:600px;margin:0 auto">
-        <div class="hero-badge">제출 완료</div>
-        <h1 class="hero-title" style="font-size:30px;margin-top:14px">내 기록 <em>${TP.u.ms(myMs)}</em></h1>
-        <p class="hero-sub">다른 참가자가 끝낼 때까지 자동으로 기다리거나, 바로 결과를 볼 수 있습니다.</p>
-        <div class="rk-boardwrap" style="margin-top:20px;text-align:left">
-          <div class="rk-boardhead">진행 현황</div>
-          <div class="rk-board" id="duel-progress-rows"></div>
-        </div>
-        <div class="rs-actions" style="margin-top:18px">
-          <button class="btn-ghost" id="btn-duel-showresult">결과 바로 보기</button>
-        </div>
-      </div>`));
-    $('#btn-duel-showresult', box).onclick = () => this.showResult();
+  /** App 이 그린 결과 화면 맨 위에 대결 현황 블록을 끼워넣는다 */
+  mountStandings() {
+    const wrap = $('#result-wrap');
+    if (!wrap) return;
+    let box = $('#duel-standings');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'duel-standings';
+      box.className = 'rk-boardwrap';
+      box.style.marginBottom = '24px';
+      wrap.insertBefore(box, wrap.firstChild);
+    }
+    box.innerHTML = `
+      <div class="rk-boardhead">실시간 대결 · 코드 ${TP.Leaderboard.esc(this.room.code)}</div>
+      <div class="rk-board" id="duel-standing-rows"></div>
+      <p class="rk-boardnote" id="duel-standing-note">다른 참가자가 끝나기를 기다리는 중입니다...</p>
+      <div class="lb-fix-actions" style="margin-top:12px">
+        <button type="button" class="btn-ghost" id="btn-duel-again">새 방 만들기</button>
+        <button type="button" class="btn-link" id="btn-duel-leave2">대결 나가기</button>
+      </div>`;
+    $('#btn-duel-again', box).onclick = () => { this.leaveRoom(); this.open(); };
+    $('#btn-duel-leave2', box).onclick = () => this.leaveRoom();
+  },
+
+  /* 순위 기준: 예매 성공이 먼저, 그다음 종합 점수, 그다음 반응속도.
+     아직 안 끝낸 사람은 항상 뒤로 보낸다. */
+  rankPlayers(players) {
+    return players.slice().sort((a, b) => {
+      const aDone = a.finished_at != null, bDone = b.finished_at != null;
+      if (aDone !== bDone) return aDone ? -1 : 1;
+      if (!aDone) return 0;
+      if (!!b.success !== !!a.success) return b.success ? 1 : -1;
+      const as = a.score == null ? -1 : a.score, bs = b.score == null ? -1 : b.score;
+      if (bs !== as) return bs - as;
+      const ar = a.reaction_ms == null ? Infinity : a.reaction_ms;
+      const br = b.reaction_ms == null ? Infinity : b.reaction_ms;
+      return ar - br;
+    });
   },
 
   startResultPoll() {
@@ -565,81 +653,56 @@ const Duel = {
       const c = TP.Leaderboard.cfg();
       try {
         const res = await fetch(
-          `${c.url}/rest/v1/duel_players?room_code=eq.${enc(this.room.code)}&select=id,nick,reaction_ms&order=reaction_ms.asc.nullslast`,
+          `${c.url}/rest/v1/duel_players?room_code=eq.${enc(this.room.code)}`
+          + `&select=id,nick,reaction_ms,seat_time_ms,score,success,finished_at&order=joined_at.asc`,
           { headers: TP.Leaderboard.headers(c) }
         );
         if (!res.ok || !this.room) return;
         const players = await res.json();
         if (!this.room) return;
         this.room.players = players;
-        this.renderProgressRows();
-        if (players.length && players.every(p => p.reaction_ms != null)) {
-          this.stopPoll();
-          this.showResult();
-        }
+        const allDone = players.length && players.every(p => p.finished_at != null);
+        this.renderStandingRows(allDone);
+        if (allDone) this.stopPoll();
       } catch (e) {}
     };
     tick();
-    this._pollTimer = setInterval(tick, 900);
+    this._pollTimer = setInterval(tick, 1500);
   },
 
-  renderProgressRows() {
-    const rows = $('#duel-progress-rows');
+  /** 결과 화면 위에 얹은 대결 순위표를 갱신한다 */
+  renderStandingRows(allDone) {
+    const rows = $('#duel-standing-rows');
     if (!rows || !this.room) return;
-    rows.innerHTML = '';
     const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
-    this.room.players.forEach((p, i) => {
+    const ranked = this.rankPlayers(this.room.players);
+
+    rows.innerHTML = '';
+    ranked.forEach((p, i) => {
+      const done = p.finished_at != null;
+      const detail = done
+        ? `${p.success ? '성공' : '실패'} · ${p.score == null ? '—' : p.score + '점'}`
+        : '진행 중...';
       rows.appendChild(H(`
         <div class="rk-row${p.id === this.room.playerId ? ' me' : ''}">
-          <span class="rk-r">${i + 1}</span>
+          <span class="rk-r">${done ? (i + 1) + '위' : '—'}</span>
           <span class="rk-n">${TP.Leaderboard.esc(p.nick)}</span>
-          <span class="rk-t">${p.reaction_ms == null ? '진행 중...' : TP.u.ms(p.reaction_ms)}</span>
+          <span class="rk-sub">${detail}</span>
+          <span class="rk-t">${p.reaction_ms == null ? '' : TP.u.ms(p.reaction_ms)}</span>
         </div>`));
     });
+
+    const note = $('#duel-standing-note');
+    if (note) {
+      const winner = ranked[0];
+      note.innerHTML = allDone
+        ? (winner ? `<b>${TP.Leaderboard.esc(winner.nick)}</b> 님이 1위입니다. 순위는 예매 성공 → 종합 점수 → 반응속도 순으로 정합니다.` : '')
+        : '다른 참가자가 끝나기를 기다리는 중입니다...';
+    }
   },
 
-  /* ─────────── 결과 ─────────── */
-  showResult() {
-    this.stopPoll();
-    if (!this.room) return;
-    const box = $('#duel-box');
-    box.innerHTML = '';
-    const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
-
-    const players = (this.room.players || []).slice().sort((a, b) => {
-      if (a.reaction_ms == null && b.reaction_ms == null) return 0;
-      if (a.reaction_ms == null) return 1;
-      if (b.reaction_ms == null) return -1;
-      return a.reaction_ms - b.reaction_ms;
-    });
-
-    box.appendChild(H(`
-      <div style="max-width:640px;margin:0 auto">
-        <div class="hero-badge">대결 결과</div>
-        <h1 class="hero-title" style="font-size:30px;margin-top:14px">코드 ${this.room.code} 결과</h1>
-        <div class="rk-boardwrap" style="margin-top:18px">
-          <div class="rk-boardhead">순위</div>
-          <div class="rk-board" id="duel-result-rows"></div>
-        </div>
-        <div class="rs-actions" style="margin-top:20px">
-          <button class="btn-primary" id="btn-duel-newroom">새 방 만들기</button>
-          <button class="btn-ghost" id="btn-duel-exit">전체 연습으로</button>
-        </div>
-      </div>`));
-
-    const rows = box.querySelector('#duel-result-rows');
-    players.forEach((p, i) => {
-      rows.appendChild(H(`
-        <div class="rk-row${p.id === this.room.playerId ? ' me' : ''}">
-          <span class="rk-r">${p.reaction_ms == null ? '—' : (i + 1) + '위'}</span>
-          <span class="rk-n">${TP.Leaderboard.esc(p.nick)}</span>
-          <span class="rk-t">${p.reaction_ms == null ? '미제출' : TP.u.ms(p.reaction_ms)}</span>
-        </div>`));
-    });
-
-    $('#btn-duel-newroom', box).onclick = () => { this.room = null; this.renderHome(); };
-    $('#btn-duel-exit', box).onclick = () => this.exit();
-  }
+  /* 결과 화면은 App 이 그린 것을 그대로 쓰고, 그 위에 대결 순위표만 얹는다
+     (mountStandings / renderStandingRows). 별도의 대결 결과 화면은 두지 않는다. */
 };
 
 TP.Duel = Duel;

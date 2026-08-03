@@ -311,9 +311,14 @@ const App = {
   /* ══════════════════════════════════════
      연습 시작
      ══════════════════════════════════════ */
-  start() {
+  /**
+   * @param {number} [seedOverride] 시드를 넘기면 그 값으로 시뮬레이션을 만든다.
+   *   실시간 대결에서 참가자 전원이 완전히 똑같은 판(같은 좌석 배치·같은 경쟁자 움직임·
+   *   같은 서버 지연)을 받아야 비교가 성립하므로 방 코드에서 뽑은 시드를 넘긴다.
+   */
+  start(seedOverride) {
     const d = this.cfg.difficulty;
-    this.seed = (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
+    this.seed = (seedOverride != null ? seedOverride : (Date.now() ^ (Math.random() * 0xffffffff))) >>> 0;
     this.rng = TP.Rng(this.seed);
     this.cfg.users = d.users;
 
@@ -1203,6 +1208,17 @@ const App = {
       success: success
     });
     ui.show('result');
+
+    /* 한 판이 끝났음을 알린다. 실시간 대결이 이 신호를 받아 결과를 서버에 올린다.
+       결과 화면을 그린 뒤에 쏘아야 대결 순위표를 그 위에 얹을 수 있다. */
+    TP.bus.emit('run:finish', {
+      success: success,
+      reason: reason,
+      reactionMs: r.reactionMs,
+      seatTimeMs: r.seatTimeMs,
+      score: analysis.overallScore,
+      grade: analysis.grade
+    });
   },
 
   /* ─────────── 기록 랭킹 ───────────
