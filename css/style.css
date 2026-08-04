@@ -193,6 +193,9 @@ input{font-family:inherit}
   background:var(--surface);border:1px solid var(--border);transition:.16s;
 }
 .opt:hover{border-color:var(--border-2)}
+/* '좌석만 연습' 을 켜면 건너뛰는 단계라 손댈 수 없음을 보여준다 */
+.opt-off{opacity:.42;cursor:not-allowed}
+.opt-off:hover{border-color:var(--border)}
 .opt input{position:absolute;opacity:0;pointer-events:none}
 .opt-box{
   flex:0 0 auto;width:18px;height:18px;margin-top:2px;border-radius:5px;

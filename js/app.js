@@ -15,7 +15,7 @@ const App = {
     target: 'any',
     round: null,                  // 선택한 회차 (대기열 통과 후 결정)
     qty: 2,                       // 예매 매수
-    opts: { captcha: true, errors: true, refreshLimit: true, countdown: true }
+    opts: { captcha: true, errors: true, refreshLimit: true, countdown: true, seatOnly: false }
   },
   phase: 'home',
   running: false,
@@ -168,11 +168,30 @@ const App = {
     pn.value = TP.rank.player();
     pn.addEventListener('input', e => TP.rank.setPlayer(e.target.value.trim().slice(0, 12)));
 
-    ['captcha', 'errors', 'refresh', 'countdown'].forEach(k => {
-      const id = { captcha: 'opt-captcha', errors: 'opt-errors', refresh: 'opt-refresh', countdown: 'opt-countdown' }[k];
+    ['captcha', 'errors', 'refresh', 'countdown', 'seatonly'].forEach(k => {
+      const id = {
+        captcha: 'opt-captcha', errors: 'opt-errors', refresh: 'opt-refresh',
+        countdown: 'opt-countdown', seatonly: 'opt-seatonly'
+      }[k];
+      const key = { refresh: 'refreshLimit', seatonly: 'seatOnly' }[k] || k;
       $('#' + id).addEventListener('change', e => {
-        this.cfg.opts[k === 'refresh' ? 'refreshLimit' : k] = e.target.checked;
+        this.cfg.opts[key] = e.target.checked;
+        // 좌석만 연습할 때는 앞 단계 설정이 의미가 없다 — 흐릿하게 만들어 알려준다
+        if (k === 'seatonly') this.paintSeatOnly();
       });
+    });
+    this.paintSeatOnly();
+  },
+
+  /** '좌석만 연습' 을 켜면 건너뛰는 단계의 설정을 비활성으로 보여준다 */
+  paintSeatOnly() {
+    const on = !!this.cfg.opts.seatOnly;
+    ['opt-captcha', 'opt-refresh', 'opt-countdown'].forEach(id => {
+      const input = $('#' + id);
+      if (!input) return;
+      input.disabled = on;
+      const label = input.closest('.opt');
+      if (label) label.classList.toggle('opt-off', on);
     });
   },
 
@@ -368,7 +387,30 @@ const App = {
     this.hideMenuHint();
     ui.topbar(true);
     this.startLoop();
-    this.goStandby();
+    if (this.cfg.opts.seatOnly) this.goSeatOnly();
+    else this.goStandby();
+  },
+
+  /* ─────────── 좌석만 연습 ───────────
+     좌석 잡기가 느려서 그 구간만 반복하고 싶은데, 매번 대기열·보안문자·회차를
+     다시 거치면 한 번 연습에 몇 분이 든다. 앞 단계를 건너뛰고 좌석 화면부터 연다.
+
+     건너뛴 구간의 지표(반응속도·회차 선택)는 측정되지 않았으므로 null 로 두고,
+     분석에서도 "측정 안 됨"으로 처리되게 한다. 0 으로 채우면 실력이 좋아진 것처럼
+     보이는 가짜 기록이 남는다. */
+  goSeatOnly() {
+    // 회차를 자동으로 고른다 — 매진되지 않은 첫 회차
+    const rounds = this.cfg.concert.schedule || [];
+    this.cfg.round = rounds.find(r => !r.sold) || rounds[0] || null;
+    if (this.cfg.round) this.roundHeat = this.cfg.round.heat || 1;
+
+    this.run.reactionMs = null;
+    this.run.schedTimeMs = null;
+    this.run.soldAtEntry = (this.map.total - this.map.available()) / this.map.total;
+
+    this.timerOn = true;       // 좌석 화면부터 예매 제한시간이 흐른다
+    T.log('좌석만 연습 — 앞 단계를 건너뜁니다', 'info');
+    this.goZone();
   },
 
   startLoop() {
