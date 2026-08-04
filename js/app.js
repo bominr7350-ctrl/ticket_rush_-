@@ -15,7 +15,7 @@ const App = {
     target: 'any',
     round: null,                  // 선택한 회차 (대기열 통과 후 결정)
     qty: 2,                       // 예매 매수
-    opts: { captcha: true, errors: true, refreshLimit: true, countdown: true, seatOnly: false }
+    opts: { captcha: true, errors: true, refreshLimit: true, countdown: true, skipPay: false, reactionOnly: false }
   },
   phase: 'home',
   running: false,
@@ -168,25 +168,24 @@ const App = {
     pn.value = TP.rank.player();
     pn.addEventListener('input', e => TP.rank.setPlayer(e.target.value.trim().slice(0, 12)));
 
-    ['captcha', 'errors', 'refresh', 'countdown', 'seatonly'].forEach(k => {
+    ['captcha', 'errors', 'refresh', 'countdown', 'skippay', 'reactiononly'].forEach(k => {
       const id = {
         captcha: 'opt-captcha', errors: 'opt-errors', refresh: 'opt-refresh',
-        countdown: 'opt-countdown', seatonly: 'opt-seatonly'
+        countdown: 'opt-countdown', skippay: 'opt-skippay', reactiononly: 'opt-reactiononly'
       }[k];
-      const key = { refresh: 'refreshLimit', seatonly: 'seatOnly' }[k] || k;
+      const key = { refresh: 'refreshLimit', skippay: 'skipPay', reactiononly: 'reactionOnly' }[k] || k;
       $('#' + id).addEventListener('change', e => {
         this.cfg.opts[key] = e.target.checked;
-        // 좌석만 연습할 때는 앞 단계 설정이 의미가 없다 — 흐릿하게 만들어 알려준다
-        if (k === 'seatonly') this.paintSeatOnly();
+        if (k === 'reactiononly') this.paintReactionOnly();
       });
     });
-    this.paintSeatOnly();
+    this.paintReactionOnly();
   },
 
-  /** '좌석만 연습' 을 켜면 건너뛰는 단계의 설정을 비활성으로 보여준다 */
-  paintSeatOnly() {
-    const on = !!this.cfg.opts.seatOnly;
-    ['opt-captcha', 'opt-refresh', 'opt-countdown'].forEach(id => {
+  /** '반응속도만 측정' 을 켜면 뒤 단계 설정이 전부 의미가 없어진다 — 비활성으로 알려준다 */
+  paintReactionOnly() {
+    const on = !!this.cfg.opts.reactionOnly;
+    ['opt-captcha', 'opt-errors', 'opt-refresh', 'opt-skippay'].forEach(id => {
       const input = $('#' + id);
       if (!input) return;
       input.disabled = on;
@@ -387,30 +386,7 @@ const App = {
     this.hideMenuHint();
     ui.topbar(true);
     this.startLoop();
-    if (this.cfg.opts.seatOnly) this.goSeatOnly();
-    else this.goStandby();
-  },
-
-  /* ─────────── 좌석만 연습 ───────────
-     좌석 잡기가 느려서 그 구간만 반복하고 싶은데, 매번 대기열·보안문자·회차를
-     다시 거치면 한 번 연습에 몇 분이 든다. 앞 단계를 건너뛰고 좌석 화면부터 연다.
-
-     건너뛴 구간의 지표(반응속도·회차 선택)는 측정되지 않았으므로 null 로 두고,
-     분석에서도 "측정 안 됨"으로 처리되게 한다. 0 으로 채우면 실력이 좋아진 것처럼
-     보이는 가짜 기록이 남는다. */
-  goSeatOnly() {
-    // 회차를 자동으로 고른다 — 매진되지 않은 첫 회차
-    const rounds = this.cfg.concert.schedule || [];
-    this.cfg.round = rounds.find(r => !r.sold) || rounds[0] || null;
-    if (this.cfg.round) this.roundHeat = this.cfg.round.heat || 1;
-
-    this.run.reactionMs = null;
-    this.run.schedTimeMs = null;
-    this.run.soldAtEntry = (this.map.total - this.map.available()) / this.map.total;
-
-    this.timerOn = true;       // 좌석 화면부터 예매 제한시간이 흐른다
-    T.log('좌석만 연습 — 앞 단계를 건너뜁니다', 'info');
-    this.goZone();
+    this.goStandby();
   },
 
   startLoop() {
@@ -585,6 +561,9 @@ const App = {
     const reaction = performance.now() - this.openAt;
     this.run.reactionMs = reaction;
     T.log(`예매 버튼 클릭 (${u.ms(reaction)})`, reaction < 500 ? 'good' : 'info');
+
+    // 반응속도만 재는 모드 — 대기열로 넘어가지 않고 여기서 끝낸다
+    if (this.cfg.opts.reactionOnly) return this.finishReactionOnly(reaction);
 
     this.phase = 'connecting';
     await ui.request(this.server, { noFail: true, latencyMul: 1.4 }, '예매 페이지로 이동 중입니다...');
@@ -1063,6 +1042,12 @@ const App = {
       return;
     }
     T.log(`좌석 확정 ${this.map.mine.length}매`, 'good');
+    // 결제는 실전에서도 좌석을 잡은 뒤의 일이라, 속도 연습만 하려면 건너뛰는 편이 낫다
+    if (this.cfg.opts.skipPay) {
+      this.run.price = this.map.mine.reduce((a, s) => a + s.price, 0);
+      T.log('결제 과정 생략', 'info');
+      return this.finish(true, 'success');
+    }
     this.goCheckout();
   },
 
@@ -1187,6 +1172,146 @@ const App = {
   /* ══════════════════════════════════════
      종료 · 분석
      ══════════════════════════════════════ */
+  /* ══════════════════════════════════════
+     반응속도만 측정
+     예매 버튼을 얼마나 빨리 눌렀는지와, 내 인터넷이 서버까지 왕복하는 데
+     걸리는 시간을 잰다. 실전에서는 이 둘을 더한 만큼 남보다 늦게 도착한다.
+     ══════════════════════════════════════ */
+
+  /** 같은 크기의 파일을 여러 번 받아 왕복시간의 중앙값을 낸다.
+      한 번만 재면 순간적인 튐에 휘둘려 숫자를 믿을 수 없다. */
+  async measurePing(tries) {
+    const n = tries || 5;
+    const times = [];
+    for (let i = 0; i < n; i++) {
+      const t0 = performance.now();
+      try {
+        // 캐시에서 꺼내오면 0ms 가 나오므로 매번 다른 주소로 강제 요청한다
+        await fetch(`icons/favicon-32.png?ping=${Date.now()}_${i}`, { cache: 'no-store' });
+        times.push(performance.now() - t0);
+      } catch (e) { /* 실패한 회차는 빼고 나머지로 계산한다 */ }
+    }
+    return times.length ? u.median(times) : null;
+  },
+
+  async finishReactionOnly(reaction) {
+    if (this._finished) return;
+    this._finished = true;
+    this.running = false;
+    this.timerOn = false;
+    this.stopLoop();
+    T.stop();
+    window.removeEventListener('pointerdown', this._earlyHandler);
+
+    ui.loading(true, '인터넷 응답속도를 재는 중입니다...');
+    const ping = await this.measurePing(5);
+    ui.loading(false);
+
+    const early = (T.counters && T.counters.earlyClick) || 0;
+
+    // 반응속도는 온라인 랭킹이 세는 바로 그 지표라 그대로 저장한다
+    TP.store.save({
+      at: Date.now(),
+      player: TP.rank.player(),
+      concert: this.cfg.concert.name,
+      difficulty: this.cfg.difficulty.name,
+      round: null, qty: this.cfg.qty,
+      success: false, reason: 'reaction-only',
+      reaction: reaction, schedTime: null, seatTime: null,
+      score: null, grade: null
+    });
+
+    this.phase = 'result';
+    ui.topbar(false);
+    this.renderReactionResult(reaction, ping, early);
+    ui.show('result');
+  },
+
+  renderReactionResult(reaction, ping, early) {
+    const wrap = $('#result-wrap');
+    wrap.innerHTML = '';
+    const H = html => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
+
+    // 실전 체감 기준. 반응 자체보다 '반응 + 왕복'이 실제 도착 순서를 만든다
+    const tier =
+      reaction < 250 ? { g: 'S', t: '반사신경만 놓고 보면 최상위', d: '이 속도면 대기번호 앞자리를 노려볼 수 있습니다.' } :
+      reaction < 400 ? { g: 'A', t: '실전에서 통하는 속도', d: '좋습니다. 남은 건 대기열 이후의 판단 속도입니다.' } :
+      reaction < 700 ? { g: 'B', t: '평균 수준', d: '화면을 보고 나서 손이 움직입니다. 손을 미리 버튼 위에 올려두세요.' } :
+      reaction < 1200 ? { g: 'C', t: '한 박자 느림', d: '숫자를 눈으로 세지 말고, 0 이 되는 순간만 노리세요.' } :
+      { g: 'D', t: '많이 느림', d: '카운트다운 마지막 3초에는 다른 곳을 보지 말고 버튼만 보세요.' };
+
+    const total = ping == null ? null : reaction + ping;
+
+    wrap.appendChild(H(`
+      <div class="rs-hero">
+        <div class="rs-verdict">반응속도 측정 결과</div>
+        <div class="rs-outcome ok">${u.ms(reaction)}</div>
+        <div class="rs-desc">예매 버튼이 열린 순간부터 실제로 누르기까지 걸린 시간입니다.</div>
+        <div class="rs-gradewrap">
+          <div class="rs-grade">${tier.g}<small>REACTION</small></div>
+          <div class="rs-gradetext">
+            <h3>${tier.t}</h3>
+            <p>${tier.d}</p>
+          </div>
+        </div>
+      </div>`));
+
+    wrap.appendChild(H(`
+      <div class="rs-section">
+        <h3>기록</h3>
+        <div class="rec-grid">
+          <div class="rec-item"><div class="rec-val">${u.ms(reaction)}</div><div class="rec-lab">내 반응속도</div></div>
+          <div class="rec-item"><div class="rec-val">${ping == null ? '—' : u.ms(ping)}</div><div class="rec-lab">인터넷 왕복시간</div></div>
+          <div class="rec-item"><div class="rec-val">${total == null ? '—' : u.ms(total)}</div><div class="rec-lab">합계(체감 도착)</div></div>
+          <div class="rec-item"><div class="rec-val">${early}</div><div class="rec-lab">미리 누른 횟수</div></div>
+        </div>
+      </div>`));
+
+    wrap.appendChild(H(`
+      <div class="rs-section">
+        <h3>무슨 뜻인가요</h3>
+        <div class="fb-list">
+          <div class="fb ${reaction < 400 ? 'good' : reaction < 700 ? 'warn' : 'crit'}">
+            <div class="fb-icon">⚡</div>
+            <div class="fb-body">
+              <h4>반응속도 ${u.ms(reaction)}</h4>
+              <p>버튼이 열린 것을 눈으로 확인하고 손가락이 움직이기까지의 시간입니다.
+                 사람의 한계는 보통 0.2초 근처라 이보다 빠르면 미리 누른 것으로 봅니다.</p>
+            </div>
+          </div>
+          <div class="fb ${ping == null ? 'warn' : ping < 80 ? 'good' : ping < 200 ? 'warn' : 'crit'}">
+            <div class="fb-icon">📶</div>
+            <div class="fb-body">
+              <h4>인터넷 왕복시간 ${ping == null ? '측정 실패' : u.ms(ping)}</h4>
+              <p>${ping == null
+                  ? '네트워크 요청이 막혀 측정하지 못했습니다. 인터넷 연결을 확인해 주세요.'
+                  : '내 클릭이 서버까지 갔다가 돌아오는 데 걸리는 시간입니다. ' +
+                    (ping < 80 ? '충분히 빠릅니다.'
+                     : ping < 200 ? '나쁘지 않지만, 와이파이 대신 유선이나 5G 를 쓰면 더 줄어듭니다.'
+                     : '느린 편입니다. 공용 와이파이라면 실전에서는 다른 회선을 쓰는 편이 유리합니다.')}</p>
+            </div>
+          </div>
+          <div class="fb good">
+            <div class="fb-icon">🎯</div>
+            <div class="fb-body">
+              <h4>실제로 중요한 것은 둘의 합</h4>
+              <p>${total == null ? '왕복시간을 재지 못해 합계를 낼 수 없습니다.'
+                  : `손이 빨라도 회선이 느리면 늦게 도착합니다. 지금 기준 합계는 <b>${u.ms(total)}</b> 입니다.
+                     반응속도는 연습으로, 왕복시간은 회선을 바꿔서 줄일 수 있습니다.`}</p>
+            </div>
+          </div>
+        </div>
+      </div>`));
+
+    const act = H(`<div class="rs-actions">
+        <button class="btn-primary" id="btn-ro-again">다시 측정</button>
+        <button class="btn-ghost" id="btn-ro-home">홈으로</button>
+      </div>`);
+    wrap.appendChild(act);
+    $('#btn-ro-again', act).onclick = () => this.start();
+    $('#btn-ro-home', act).onclick = () => this.goHome();
+  },
+
   finish(success, reason) {
     if (this._finished) return;
     this._finished = true;
