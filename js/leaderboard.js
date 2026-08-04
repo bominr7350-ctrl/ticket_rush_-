@@ -39,7 +39,21 @@ const SETUP_SQL =
   success      boolean not null default false
 );
 
+-- 기록의 주인을 구분하는 값 (브라우저마다 만들어지는 난수. 개인정보가 아니다)
+alter table public.scores add column if not exists player_id text;
+
 create index if not exists scores_reaction_idx on public.scores (reaction_ms);
+
+-- 사람별 '최고기록' 한 줄씩만 남기는 뷰.
+-- 이게 없으면 한 사람이 여러 판 한 기록이 TOP 10 을 그대로 차지한다.
+create or replace view public.scores_best as
+select distinct on (coalesce(player_id, nick))
+  coalesce(player_id, nick) as pid,
+  nick, difficulty, reaction_ms, seat_time_ms, score, success, created_at
+from public.scores
+order by coalesce(player_id, nick), reaction_ms asc;
+
+grant select on public.scores_best to anon;
 
 alter table public.scores enable row level security;
 
@@ -87,6 +101,50 @@ const LB = {
     ));
   },
 
+  /* 이름이 비어 있으면 그 자리에서 물어본다.
+     홈 화면 04번 항목 안에 있는 입력칸은 대부분 그냥 지나쳐서,
+     온라인 기록이 전부 '이름 없음' 으로 쌓인다.
+     @returns {Promise<string|null>} 정한 이름. 취소하면 null. */
+  ensureNick(reason) {
+    const cur = (TP.rank.player() || '').trim();
+    if (cur) return Promise.resolve(cur.slice(0, 12));
+
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 'menu-backdrop';
+      back.style.zIndex = '130';
+      const box = document.createElement('div');
+      box.className = 'nick-ask';
+      box.innerHTML = `
+        <h3>이름을 정해주세요</h3>
+        <p>${this.esc(reason || '순위표에 표시될 이름입니다.')} 실명이 아니어도 됩니다.</p>
+        <input type="text" id="nick-ask-input" maxlength="12" autocomplete="off" spellcheck="false"
+               placeholder="예: 포도알사냥꾼">
+        <div class="nick-ask-actions">
+          <button type="button" class="btn-ghost" id="nick-ask-cancel">취소</button>
+          <button type="button" class="btn-primary" id="nick-ask-ok">확인</button>
+        </div>`;
+      document.body.appendChild(back);
+      document.body.appendChild(box);
+
+      const input = box.querySelector('#nick-ask-input');
+      const close = (val) => { back.remove(); box.remove(); resolve(val); };
+      const confirm = () => {
+        const v = input.value.trim().slice(0, 12);
+        if (!v) { input.focus(); return; }
+        TP.rank.setPlayer(v);
+        const home = document.getElementById('player-name');
+        if (home) home.value = v;      // 홈 화면 입력칸도 같이 맞춰준다
+        close(v);
+      };
+      box.querySelector('#nick-ask-ok').onclick = confirm;
+      box.querySelector('#nick-ask-cancel').onclick = () => close(null);
+      back.onclick = () => close(null);
+      input.onkeydown = (e) => { if (e.key === 'Enter') confirm(); };
+      setTimeout(() => input.focus(), 30);
+    });
+  },
+
   /* 원인을 짐작하지 않고 서버 응답을 그대로 해석한다 (chat.js 에서 검증된 방식) */
   explain(code, body) {
     let j = null;
@@ -128,10 +186,12 @@ const LB = {
     }
   },
 
-  /** Range 헤더로 실제 행을 받지 않고 개수만 센다 (PostgREST count=exact) */
+  /** Range 헤더로 실제 행을 받지 않고 개수만 센다 (PostgREST count=exact)
+      대상은 사람별 최고기록 뷰(scores_best) 다 — 원본 scores 를 세면
+      한 사람이 여러 판 한 것이 그대로 "참가자 수"가 되어버린다. */
   async count(c, query) {
     try {
-      const res = await fetch(`${c.url}/rest/v1/scores?select=id${query}`, {
+      const res = await fetch(`${c.url}/rest/v1/scores_best?select=pid${query}`, {
         headers: Object.assign({}, this.headers(c), {
           'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0'
         })
@@ -145,9 +205,10 @@ const LB = {
     }
   },
 
+  /** 순위표. 사람별 최고기록 뷰에서 뽑아야 한 사람이 TOP 10 을 도배하지 않는다. */
   async board(c, limit) {
     try {
-      const url = `${c.url}/rest/v1/scores?select=nick,difficulty,reaction_ms`
+      const url = `${c.url}/rest/v1/scores_best?select=pid,nick,difficulty,reaction_ms`
         + `&order=reaction_ms.asc&limit=${limit || 10}`;
       const res = await fetch(url, { headers: this.headers(c) });
       if (!res.ok) return Object.assign({ ok: false }, this.explain(res.status, await res.text()));
@@ -182,6 +243,7 @@ const LB = {
     if (hasScore && !info.readOnly) {
       sub = await this.submit({
         nick: myNick,
+        player_id: TP.rank.playerId(),
         difficulty: info.difficulty,
         reaction_ms: Math.round(info.reactionMs),
         seat_time_ms: info.seatTimeMs == null ? null : Math.round(info.seatTimeMs),
@@ -238,9 +300,12 @@ const LB = {
     if (!rows.length) {
       rb.appendChild(H('<p class="lb-empty">아직 등록된 기록이 없습니다. 연습을 완료하면 첫 기록이 여기 남습니다.</p>'));
     } else {
+      // 내 기록은 닉네임이 아니라 이 브라우저의 식별값으로 찾는다.
+      // 이름을 안 넣어 전부 '이름 없음' 이어도 남의 기록이 내 것으로 보이지 않는다.
+      const myPid = TP.rank.playerId();
       rows.forEach((r, i) => {
         rb.appendChild(H(`
-          <div class="lb-row${r.nick === myNick ? ' me' : ''}">
+          <div class="lb-row${r.pid === myPid ? ' me' : ''}">
             <span class="lb-r">${i + 1}위</span>
             <span class="lb-n">${this.esc(r.nick)}<em class="lb-d">${this.esc(r.difficulty)}</em></span>
             <span class="lb-t">${u.ms(r.reaction_ms)}</span>
@@ -336,7 +401,13 @@ const LB = {
 
     const hist = (TP.store && TP.store.load) ? TP.store.load() : [];
     const last = hist.find((r) => r.reaction != null && isFinite(r.reaction));
-    const nick = (TP.rank && TP.rank.player ? TP.rank.player() : '') || '이름 없음';
+    // 순위표를 보러 온 참이니, 이름이 없으면 지금 정하게 한다 (취소해도 열람은 가능)
+    const nick = (TP.rank.player() || '').trim() || '이름 없음';
+    if (!(TP.rank.player() || '').trim()) {
+      this.ensureNick('순위표에 이 이름으로 표시됩니다.').then((v) => {
+        if (v) this.openStandalone();
+      });
+    }
 
     this.render(box, {
       nick,

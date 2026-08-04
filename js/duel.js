@@ -275,7 +275,9 @@ const Duel = {
 
   async createRoom() {
     const c = TP.Leaderboard.cfg();
-    const nick = (TP.rank.player() || '이름 없음').trim().slice(0, 12) || '이름 없음';
+    // 친구들이 방 목록에서 나를 알아봐야 하므로 이름 없이 방을 만들지 않는다
+    const nick = await TP.Leaderboard.ensureNick('친구들이 방 목록에서 이 이름으로 찾습니다.');
+    if (!nick) return;
     this.setBusy(true);
 
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -312,7 +314,8 @@ const Duel = {
     const code = (codeRaw || '').trim().toUpperCase();
     if (!code) { TP.ui.toast('방 코드를 입력해 주세요.', 'warn'); return; }
     const c = TP.Leaderboard.cfg();
-    const nick = (TP.rank.player() || '이름 없음').trim().slice(0, 12) || '이름 없음';
+    const nick = await TP.Leaderboard.ensureNick('대결 순위표에 이 이름으로 표시됩니다.');
+    if (!nick) return;
     this.setBusy(true);
     try {
       const res = await fetch(`${c.url}/rest/v1/duel_rooms?code=eq.${enc(code)}&select=code,status`, { headers: TP.Leaderboard.headers(c) });

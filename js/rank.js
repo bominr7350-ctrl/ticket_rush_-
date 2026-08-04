@@ -14,6 +14,7 @@ const u = TP.u;
 TP.rank = {
 
   PLAYER_KEY: 'ticketrush.player',
+  PID_KEY: 'ticketrush.pid',
 
   player() {
     try { return localStorage.getItem(this.PLAYER_KEY) || ''; }
@@ -23,6 +24,25 @@ TP.rank = {
   setPlayer(name) {
     try { localStorage.setItem(this.PLAYER_KEY, name || ''); }
     catch (e) { /* 저장이 막혀 있어도 연습은 계속 가능해야 한다 */ }
+  },
+
+  /* 이 브라우저를 가리키는 임의 식별값.
+     온라인 랭킹에서 "내 기록"을 닉네임으로 찾으면, 이름을 안 넣어 전부
+     '이름 없음' 인 사람들이 서로의 기록을 자기 것으로 보게 된다.
+     개인을 식별하는 값이 아니라 기록의 주인을 구분하기 위한 난수다. */
+  playerId() {
+    try {
+      let v = localStorage.getItem(this.PID_KEY);
+      if (!v) {
+        v = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(this.PID_KEY, v);
+      }
+      return v;
+    } catch (e) {
+      // 저장이 막힌 브라우저에서는 이번 세션 동안만 쓰는 값으로 대체한다
+      if (!this._memPid) this._memPid = 'p' + Math.random().toString(36).slice(2, 12);
+      return this._memPid;
+    }
   },
 
   /**
