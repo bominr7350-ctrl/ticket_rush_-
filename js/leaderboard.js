@@ -277,7 +277,10 @@ const LB = {
          <div class="lb-rank"><b>${u.n(total)}</b><span>명 등록됨</span></div>
          <div class="lb-of">연습을 완료하면 여기에 내 순위도 표시됩니다</div>`;
 
-    box.appendChild(H(`
+    /* 최상위 형제가 여러 개라 H() 로 감싸면 안 된다.
+       H() 는 firstElementChild 하나만 돌려주므로 순위표(lb-boardwrap)가
+       통째로 사라져 #lb-board-rows 를 못 찾는다. */
+    box.innerHTML = `
       <div class="lb-hero">
         <div class="lb-main">${mainBlock}</div>
         ${pct == null ? '' : `
@@ -293,7 +296,7 @@ const LB = {
       <div class="lb-foot">
         <span>${hasScore && !info.readOnly && sub.ok ? '이번 기록이 방금 등록됐습니다.' : (hasScore ? '가장 최근에 완료한 판 기준입니다.' : '')}</span>
         <button type="button" class="btn-link" id="btn-lb-reset">접속 정보 지우기</button>
-      </div>`));
+      </div>`;
 
     const rows = boardRes.ok ? boardRes.rows : [];
     const rb = box.querySelector('#lb-board-rows');
